@@ -83,7 +83,7 @@ def eh_data_validaymd(data_str, formato="%Y/%m/%d"):
         return False  # A data é inválida
 
 
-def devolve_date(arg):
+def devolveDate(arg):
     tipo = type(arg)
 
     if str(tipo) == "<class 'str'>":

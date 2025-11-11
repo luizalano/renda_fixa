@@ -14,7 +14,7 @@ class Cotacao:
         if isinstance(arg, (float)): self.valor_cotacao = arg
     
     def set_data_cotacao(self, arg):
-        self.data_cotacao = devolve_date(arg)
+        self.data_cotacao = devolveDate(arg)
 
     def set_id_moeda(self, arg):
         self.id_moeda = -1
