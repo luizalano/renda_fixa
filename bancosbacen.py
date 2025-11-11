@@ -5,13 +5,12 @@ class BancosBacen:
     def __init__(self):
         self.numero = -1
         self.nome = ''
-        self.getConexao()
 
-    def getConexao(self):
+    @staticmethod
+    def getConexao():
         try:
-            self.con = ConectaBD.retornaConexao()
-            self.cursor = self.con.cursor()
-            return True
+            con = ConectaBD.retornaConexao()
+            return con
         except Exception as e:
             print(f"Erro ao conectar com o banco: {e}")
             return False
@@ -26,33 +25,37 @@ class BancosBacen:
         if isinstance(arg, (str)): self.nome = arg
 
     def insert(self):
-        self.getConexao()
-        self.cursor.execute("INSERT INTO bancosbacen (numero, nome) VALUES (%s, %s)", (self.numero, self.nome))
-        self.con.commit()
-        self.con.close()
+        con = self.getConexao()
+        cursor = con.cursor()
+        cursor.execute("INSERT INTO bancosbacen (numero, nome) VALUES (%s, %s)", (self.numero, self.nome))
+        con.commit()
+        con.close()
 
     def update(self):
-        self.getConexao()
-        self.cursor.execute("UPDATE bancosbacen SET nome = %s  WHERE numero = %s", (self.nome, self.numero))
-        self.con.commit()
-        self.con.close()
+        con = self.getConexao()
+        cursor = con.cursor()
+        cursor.execute("UPDATE bancosbacen SET nome = %s  WHERE numero = %s", (self.nome, self.numero))
+        con.commit()
+        con.close()
 
     def delete(self):
-        self.getConexao()
-        self.cursor.execute("DELETE FROM bancosbacen WHERE numero = %s", (self.numero,))
-        self.con.commit()
-        self.con.close()
+        con = self.getConexao()
+        cursor = con.cursor()
+        cursor.execute("DELETE FROM bancosbacen WHERE numero = %s", (self.numero,))
+        con.commit()
+        con.close()
 
     def selectbyNumero(self, numero):
-        self.getConexao()
+        con = self.getConexao()
+        cursor = con.cursor()
         self.set_numero(-1)
         self.set_nome('')
-        self.cursor.execute("SELECT numero, nome FROM bancosbacen WHERE numero = %s", (numero,))
-        row = self.cursor.fetchone()
+        cursor.execute("SELECT numero, nome FROM bancosbacen WHERE numero = %s", (numero,))
+        row = cursor.fetchone()
         if row:
             self.set_numero(row[0])
             self.set_nome(row[1])
-        self.con.close()
+        con.close()
 
 def main():
     bb = BancosBacen()

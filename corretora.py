@@ -7,11 +7,11 @@ class Corretora:
         self.nome_corretora = ''
         self.con = None
 
-    def getConexao(self):
+    @staticmethod
+    def getConexao():
         try:
-            self.con = ConectaBD.retornaConexao()
-            self.cursor = self.con.cursor()
-            return True
+            con = ConectaBD.retornaConexao()
+            return con
         except Exception as e:
             print(f"Erro ao conectar com o banco: {e}")
             return False
@@ -20,7 +20,7 @@ class Corretora:
         if isinstance(arg, (str)): self.nome_corretora = arg
 
     def insert(self):
-        self.getConexao()
+        self.con = self.getConexao()
         if len(self.nome_corretora) > 0:
             with self.con.cursor() as cursor:
                 cursor.execute(
@@ -32,7 +32,7 @@ class Corretora:
                 self.con.close()
 
     def update(self):
-        self.getConexao()
+        self.con = self.getConexao()
         with self.con.cursor() as cursor:
             cursor.execute("UPDATE corretora SET nome = %s, "                           
                            "WHERE id = %s", (self.nome_corretora, ))
@@ -40,7 +40,7 @@ class Corretora:
             self.con.close()
 
     def delete(self):
-        self.getConexao()
+        self.con = self.getConexao()
         with self.con.cursor() as cursor:
             cursor.execute("DELETE FROM corretora WHERE id = %s", (self.id,))
             self.con.commit()
@@ -52,7 +52,7 @@ class Corretora:
         self.set_nome_corretora('')
 
     def selectById(self, arg):
-        self.getConexao()
+        self.con = self.getConexao()
         cursor = self.con.cursor()
         self.clear()
         #with self.conexao.cursor as cursor:
@@ -64,7 +64,7 @@ class Corretora:
         self.con.close()
 
     def selectByNomeCorretora(self, arg):
-        self.getConexao()
+        self.con = self.getConexao()
         cursor = self.con.cursor()
         self.clear()
         #with self.conexao.cursor as cursor:

@@ -10,11 +10,11 @@ class Bolsa:
         self.id_moeda = 2
         self.con = None
 
-    def getConexao(self):
+    @staticmethod
+    def getConexao():
         try:
-            self.con = ConectaBD.retornaConexao()
-            self.cursor = self.con.cursor()
-            return True
+            con = ConectaBD.retornaConexao()
+            return con
         except Exception as e:
             print(f"Erro ao conectar com o banco: {e}")
             return False
@@ -28,7 +28,7 @@ class Bolsa:
     def set_id_moeda(self, arg):
         self.id_moeda = 2
         if isinstance(arg, (int)):
-            self.getConexao()
+            self.con = self.getConexao()
             with self.con.cursor() as cursor:
                 cursor.execute("SELECT id FROM moeda WHERE id = %s", (arg,))
                 resultado = cursor.fetchone()
@@ -39,7 +39,7 @@ class Bolsa:
             self.con.close()
 
     def insert(self):
-        self.getConexao()
+        self.con = self.getConexao()
         if len(self.nome_bolsa) > 0:
             with self.con.cursor() as cursor:
                 cursor.execute(
@@ -51,7 +51,7 @@ class Bolsa:
                 self.con.close()
 
     def update(self):
-        self.getConexao()
+        self.con = self.getConexao()
         with self.con.cursor() as cursor:
             cursor.execute("UPDATE bolsa SET nomebolsa = %s, "
                            "sigla = %s, "
@@ -62,7 +62,7 @@ class Bolsa:
             self.con.close()
 
     def delete(self):
-        self.getConexao()
+        self.con = self.getConexao()
         with self.con.cursor() as cursor:
             cursor.execute("DELETE FROM bolsa WHERE id = %s", (self.id,))
             self.con.commit()
@@ -77,7 +77,7 @@ class Bolsa:
         self.set_id_moeda(-1)
 
     def selectById(self, arg):
-        self.getConexao()
+        self.con = self.getConexao()
         cursor = self.con.cursor()
         self.clear()
         #with self.conexao.cursor as cursor:
@@ -92,7 +92,7 @@ class Bolsa:
         self.con.close()
 
     def selectByNomeBolsa(self, arg):
-        self.getConexao()
+        self.con = self.getConexao()
         cursor = self.con.cursor()
         self.clear()
         #with self.conexao.cursor as cursor:
