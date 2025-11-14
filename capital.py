@@ -105,13 +105,9 @@ class Capital():
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
-        if self.conexao.banco == 'postgres':
-            clausulaSql = "select character_maximum_length from INFORMATION_SCHEMA.COLUMNS "
-            clausulaSql += "where table_catalog = 'b3' and table_name = 'capital'"
-            clausulaSql += "and column_name = '" + coluna + "';"
-        else:
-            clausulaSql = "select character_maximum_length from INFORMATION_SCHEMA.COLUMNS "
-            clausulaSql += "where table_name = 'capital' and column_name = '" + coluna + "';"
+        clausulaSql = "select character_maximum_length from INFORMATION_SCHEMA.COLUMNS "
+        clausulaSql += "where table_catalog = 'b3' and table_name = 'capital'"
+        clausulaSql += "and column_name = '" + coluna + "';"
 
         try:
             cursor.execute(clausulaSql)
