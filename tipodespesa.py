@@ -72,7 +72,6 @@ class TipoDespesa:
             print(f"Erro ao conectar com o banco: {e}")
             return False
 
-
     @staticmethod
     def classe_selectAll():
         con = TipoDespesa.getConexao()
@@ -85,6 +84,17 @@ class TipoDespesa:
             return lista
             
         con.close()
+
+    @staticmethod
+    def mc_select_by_id(self, arg):
+        con = TipoDespesa.getConexao()
+        cursor = con.cursor()
+        self.clear()
+        cursor.execute("SELECT id, nomedespesa FROM tipodespesa WHERE id = %s", (arg,))
+        lista = cursor.fetchone()
+        con.close()
+        return lista
+
 
 
 def main():
