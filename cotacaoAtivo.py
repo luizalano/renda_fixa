@@ -26,7 +26,7 @@ class CotacaoAtivo:
     def set_id_ativo(self, arg):
         self.id_ativo = -1
         if isinstance(arg, (int)):
-            lista = Ativo.verificaAtivoPorId(arg)
+            lista = Ativo.mc_verifica_ativo_por_id(arg)
             if lista:
                 self.id_ativo = arg
 

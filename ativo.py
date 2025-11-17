@@ -547,21 +547,19 @@ class Ativo():
             return 0
 
     @staticmethod
-    def verificaAtivoPorId(id):
+    def mc_verifica_ativo_por_id(id):
         conexao = Ativo.getConexao()
         cursor = conexao.cursor()
         cursor.execute("SELECT id, razaosocial, sigla, interesse, idbolsa FROM ativo WHERE id = %s", (id,))
-        conexao.close()
         lista = cursor.fetchone()
         conexao.close()
         return lista
     
     @staticmethod
-    def verificaAtivoPorSigla(arg):
+    def mc_verifica_ativo_por_sigla(arg):
         conexao = Ativo.getConexao()
         cursor = conexao.cursor()
-        cursor.execute("SELECT id, razaosocial, sigla, interesse, idbolsa FROM ativo WHERE sigla = %s", (arg,))
-        conexao.close()
+        cursor.execute("SELECT id, razaosocial, sigla, interesse, idbolsa FROM ativo WHERE upper(sigla) = upper(%s)", (arg,))
         lista = cursor.fetchone()
         conexao.close()
         return lista
@@ -571,13 +569,12 @@ class Ativo():
         conexao = Ativo.getConexao()
         cursor = conexao.cursor()
         cursor.execute("SELECT sigla FROM ativo WHERE id = %s", (id,))
-        conexao.close()
         row = cursor.fetchone()
         if row: return row[0]
         else: return None
 
     @staticmethod
-    def devolveNomeAtivobySigla(arg):
+    def mc_devolve_nome_ativo_by_sigla(arg):
         conexao = Ativo.getConexao()
         cursor = conexao.cursor()
         cursor.execute("SELECT razaosocial FROM ativo WHERE upper(sigla) = upper(%s)", (arg,))
@@ -598,8 +595,9 @@ class Ativo():
                       'order by a.sigla, an.dataehorainsert;'
 
         cursor.execute(clausulaSql)
+        lista = cursor.fetchall() 
         conexao.close()
-        return cursor.fetchall()
+        return lista
 
     @staticmethod
     def buscaListaDeAtivosDeInteresse():
@@ -609,8 +607,9 @@ class Ativo():
         clausulaSql = 'select id, sigla, razaosocial, interesse from ativo where interesse = 1 order by sigla;'
 
         cursor.execute(clausulaSql)
+        lista = cursor.fetchall() 
         conexao.close()
-        return cursor.fetchall()
+        return lista
         
     @staticmethod
     def get_ultima_cotacao(arg):

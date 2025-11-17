@@ -2,9 +2,9 @@
 
 from wx import *
 import wx.grid as gridlib
-import psycopg2
 from datetime import datetime
 from collections import defaultdict
+from despesa import Despesas
 from diversos import *
 
 class FrmResumoDespesasMes(wx.Frame):
@@ -65,27 +65,9 @@ class FrmResumoDespesasMes(wx.Frame):
         except Exception as e:
             wx.MessageBox(f"Entre com o mês e ano corretamente!", "Erro", wx.OK | wx.ICON_ERROR)
 
-    def carregar_dados(self, dialancamento, ano):
-        try:
-            conn = psycopg2.connect(
-                dbname="b3",
-                user="postgres",
-                password="seriate",
-                host="localhost",
-                port="5432"
-            )
-            cursor = conn.cursor()
-            
-            consulta = '''
-                SELECT d.datalancamento, t.nomedespesa, SUM(d.valor) AS total 
-                FROM despesas d JOIN tipodespesa t ON d.idtipodespesa = t.id 
-                WHERE EXTRACT(year FROM d.datalancamento) = %s and EXTRACT(month FROM d.datalancamento) = %s  
-                GROUP BY d.datalancamento, t.nomedespesa ORDER BY d.datalancamento;
-            '''
-
-            cursor.execute(consulta, (ano, dialancamento))
-            resultados = cursor.fetchall()
-
+    def carregar_dados(self, mes, ano):
+        resultados = Despesas.mc_busca_despesas_por_mes_ano(mes, ano)   
+        if resultados:
             dados = defaultdict(dict)
             todas_despesas = set()
 
@@ -144,14 +126,6 @@ class FrmResumoDespesasMes(wx.Frame):
                     total = total + valor
                 self.grid.SetCellValue(ultimaLinha, col, f"{total:.2f}".replace('.', ','))
                 formatar_celula_grid(self.grid, ultimaLinha, col, align='direita', font_size=tamanhoFonte, bold = True)
-
-            cursor.close()
-            conn.close()
-
-
-
-        except Exception as e:
-            wx.MessageBox(f"Erro ao carregar dados: {e}", "Erro", wx.OK | wx.ICON_ERROR)
 
 if __name__ == '__main__':
     app = wx.App()

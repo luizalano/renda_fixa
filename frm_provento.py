@@ -2,12 +2,12 @@
 #from wx import Button, ID_ANY
 
 from diversos import *
-from Provento import Provento
-from Ativo import *
-from Cotacao import *
-from Conta import *
+from provento import Provento
+from ativo import *
+from cotacao import *
+from conta import *
+from tipoprovento import TipoProvento
 from wxFrameMG import FrameMG
-#from ClienteDeQuem import ClienteDeQuem
 
 from wx import *
 import wx.grid
@@ -17,9 +17,9 @@ from dateutil.relativedelta import relativedelta
 class FrmProvento(FrameMG):
     insert = False
     caminho = '.\\icones\\'
-    idConta = -1
+    id_conta = -1
     listaFase = []
-    totalProventos = 0.0
+    total_proventos = 0.0
 
     def __init__(self, idContaInicial):
         self.provento = Provento()
@@ -30,7 +30,7 @@ class FrmProvento(FrameMG):
                                          xibot = 1000, split=False)
 
         self.criaComponentes()
-        self.setConta(idContaInicial)
+        self.set_conta(idContaInicial)
 
     def criaComponentes(self):
         X = self.posx(1)
@@ -44,7 +44,7 @@ class FrmProvento(FrameMG):
         #                        style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_HRULES | wx.BORDER_SUNKEN)
 
         label08, self.cbConta = self.criaCombobox(self.painel, pos=(X, 0), tamanho=22, label='Conta')
-        self.cbConta.Bind(wx.EVT_COMBOBOX, self.contaSelecionada)
+        self.cbConta.Bind(wx.EVT_COMBOBOX, self.conta_selecionada)
 
         self.grid = wx.grid.Grid(self.painel, pos=(X, Y), size=(tamX, tamY))
         self.grid.CreateGrid(0, 9)
@@ -80,7 +80,7 @@ class FrmProvento(FrameMG):
         label02, self.txtSiglaAtivo = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 1),
                                                     label='Ativo', tamanho = (5, 1),
                                                     max=0, multi=False )
-        self.txtSiglaAtivo.Bind(wx.EVT_KILL_FOCUS, self.validaSigla)
+        self.txtSiglaAtivo.Bind(wx.EVT_KILL_FOCUS, self.valida_sigla)
         label0202, self.txtNomeAtivo = self.criaCaixaDeTexto(self.painel, pos=(x0 + 20, 1),
                                                     label='Nome do ativo', tamanho = (35, 1),
                                                     max=0, multi=False )
@@ -158,12 +158,12 @@ class FrmProvento(FrameMG):
         self.btnMostraNaoMostra = Button(self.painel, id=ID_ANY, label="Mostra todos"
                                         , pos=(self.posx(80), self.posy(12)+15),
                                         size=(self.posx(50), self.posy(1) - 30), style=0)
-        self.Bind(wx.EVT_BUTTON, self.mostraNaoMostra, self.btnMostraNaoMostra)
+        self.Bind(wx.EVT_BUTTON, self.mostra_nao_mostra, self.btnMostraNaoMostra)
 
 
         self.listaComponentes = [self.txtValorIr, self.txtValorBruto, self.txtDataRecebimento, self.rb_Pago,
                                  self.cbTipoProvento, self.salva_elemento]
-        self.valoresDefault()
+        self.valores_default()
         self.dataInicial = self.today - relativedelta(months=3)
 
         #self.grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.on_left_click)
@@ -172,7 +172,7 @@ class FrmProvento(FrameMG):
         #self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.selecionaLinha, self.grid)
         #self.Bind(wx.EVT_CHAR_HOOK, self.teclaPressionada)
 
-        self.encheComboContas()
+        self.enche_combo_contas()
         self.Show()
 
     def indiceCb(self, cb, chave):
@@ -188,42 +188,42 @@ class FrmProvento(FrameMG):
 
         return indice
 
-    def setConta(self, idConta):
-        lista = Conta.selectOneById(idConta)
+    def set_conta(self, idConta):
+        lista = Conta.mc_select_one_by_id(idConta)
         if lista:
             self.cbConta.SetSelection(self.indiceCb(self.cbConta, lista[4]))
-            self.contaSelecionada(None)
+            self.conta_selecionada(None)
 
-    def contaSelecionada(self, event):
+    def conta_selecionada(self, event):
         nomeConta = self.cbConta.GetStringSelection()
         listaConta = None
-        listaConta = Conta.selectOneByNome(nomeConta)
-        self.idConta = -1
+        listaConta = Conta.mc_select_one_by_nome(nomeConta)
+        self.id_conta = -1
         if listaConta:
-            self.idConta = listaConta[0]
+            self.id_conta = listaConta[0]
             if listaConta[8] == 'REAL':
                 self.txtNomeMoeda.SetValue(listaConta[8])
                 self.txtValorMoeda.SetValue('')
             else:
-                lista = Cotacao.getultimacotacao(listaConta[7])
+                lista = Cotacao.mc_get_ultima_cotacao(listaConta[7])
                 if lista:
                     self.txtNomeMoeda.SetValue(lista[1])
                     self.txtValorMoeda.SetValue(formata_numero(lista[0]))
                 else:
                     self.txtNomeMoeda.SetValue('')
                     self.txtValorMoeda.SetValue('')
-            self.montaGrid(self.dataInicial)
+            self.monta_grid(self.dataInicial)
         else:
             self.txtNomeMoeda.SetValue('')
             self.txtValorMoeda.SetValue('')
 
-    def validaSigla(self, event):
+    def valida_sigla(self, event):
         novo_foco = wx.Window.FindFocus()  # Obtém o próximo elemento que recebeu foco
 
         # Verifica se o novo foco está na lista de componentes que precisam de validação
         if novo_foco in self.listaComponentes:
             sigla = self.txtSiglaAtivo.Value
-            nomeAtivo = Ativo.devolveNomeAtivobySigla(sigla)
+            nomeAtivo = Ativo.mc_devolve_nome_ativo_by_sigla(sigla)
             if nomeAtivo == None:
                 wx.MessageBox("Ativo não está cadastrado!", "Aviso")
                 self.txtSiglaAtivo.SetFocus()
@@ -233,7 +233,7 @@ class FrmProvento(FrameMG):
         event.Skip()  #
         a = 2
 
-    def valoresDefault(self):
+    def valores_default(self):
         self.provento.clear()
 
         self.txtId.Clear()
@@ -242,12 +242,12 @@ class FrmProvento(FrameMG):
         self.txtValorBruto.Clear()
         self.txtValorIr.Clear()
         self.cbTipoProvento.Clear()
-        self.encheComboTipoProventos()
+        self.enche_combo_tipo_proventos()
         #self.encheComboContas()
 
-        self.disabilitaComponentes()
+        self.disabilita_componentes()
 
-    def limpaElementos(self):
+    def limpa_elementos(self):
         self.provento.clear()
 
         self.txtId.Clear()
@@ -257,7 +257,7 @@ class FrmProvento(FrameMG):
         self.txtValorBruto.Clear()
         self.txtValorIr.Clear()
 
-    def disabilitaComponentes(self):
+    def disabilita_componentes(self):
         self.txtId.Disable()
         self.txtSiglaAtivo.Disable()
         self.txtDataRecebimento.Disable()
@@ -269,65 +269,33 @@ class FrmProvento(FrameMG):
         self.botaoSalva.Disable()
         self.botaoDelete.Disable()
 
-    def encheComboTipoProventos(self):
-        lista = self.buscaTiposProvento()
+    def enche_combo_tipo_proventos(self):
+        lista = TipoProvento.sm_select_all()
         self.cbTipoProvento.Clear()
         for row in lista:
             self.cbTipoProvento.Append(row[1])
 
-    def encheComboContas(self):
-        lista = Conta.selectAll()
+    def enche_combo_contas(self):
+        lista = Conta.mc_select_all()
         self.cbConta.Clear()
         for row in lista:
             self.cbConta.Append(row[4])
 
-    def buscaTiposProvento(self):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost",
-                                   port="5432")
-        with conexao.cursor() as cursor:
-            cursor.execute("SELECT id, nometipoprovento FROM tipoprovento order by nometipoprovento")
-            lista = cursor.fetchall()
-            if lista:
-                return lista
-            else:
-                return None
-
-    def buscaTipoProventobyNome(self, arg):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost",
-                                   port="5432")
-        with conexao.cursor() as cursor:
-            cursor.execute("SELECT id, nometipoprovento FROM tipoprovento WHERE upper(nometipoprovento) = upper(%s)", (arg,))
-            lista = cursor.fetchall()
-            if lista:
-                return lista
-            else:
-                return None
-
-    def buscaTipoProventobyId(self, arg):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
-        with conexao.cursor() as cursor:
-            cursor.execute("SELECT id, nometipoprovento FROM tipoprovento WHERE id = %s", (arg,))
-            lista = cursor.fetchone()
-            if lista:
-                return lista
-            else:
-                return None
-
-    def mostraNaoMostra(self, event):
+    def mostra_nao_mostra(self, event):
         caption = self.btnMostraNaoMostra.GetLabel()
         if caption == 'Mostra todos':
             self.btnMostraNaoMostra.SetLabel('Mostra últimos 3 meses')
-            self.montaGrid(None)
+            self.monta_grid(None)
         else:
             self.btnMostraNaoMostra.SetLabel('Mostra todos')
-            self.montaGrid(self.dataInicial)
+            self.monta_grid(self.dataInicial)
 
-    def montaGrid(self, dataInicial):
+    def monta_grid(self, dataInicial):
         #self.lista = self.provento.getAll()
-        self.lista = Provento.buscaPorPeriodo(dataInicial, self.idConta)
+        self.lista = Provento.sm_busca_por_periodo(dataInicial, self.id_conta)
         self.grid.ClearGrid()
-        self.totalProventos = 0.0
-        self.totalPendente = 0.0
+        self.total_proventos = 0.0
+        self.total_pendente = 0.0
 
         if self.grid.GetNumberRows() > 0:
             self.grid.DeleteRows(0, self.grid.GetNumberRows())
@@ -337,13 +305,13 @@ class FrmProvento(FrameMG):
                 linha += 1
                 if row[5]:
                     pago = 'Pago'
-                    self.totalProventos += (row[3] - row[4])
+                    self.total_proventos += (row[3] - row[4])
                 else:
                     self.grid.SetCellBackgroundColour(linha, 6, wx.Colour(176, 10, 4))
                     for col in (0, 1, 2 ,3 ,4 ,5 ,7 ,8):
                         self.grid.SetCellBackgroundColour(linha, col, wx.Colour(245, 179, 176))
                     pago = ''
-                    self.totalPendente += (row[3] - row[4])
+                    self.total_pendente += (row[3] - row[4])
 
                 self.grid.AppendRows()
                 #conta = Conta.selectOneById(row[7])
@@ -354,29 +322,28 @@ class FrmProvento(FrameMG):
                 self.grid.SetCellValue(linha, 4, formata_numero(row[4]))
                 self.grid.SetCellValue(linha, 5, formata_numero(row[3]- row[4]))
                 self.grid.SetCellValue(linha, 6, pago)
-                self.grid.SetCellValue(linha, 7, row[9])     #self.buscaTipoProventobyId(row[6])[1])
+                self.grid.SetCellValue(linha, 7, row[9])     
                 self.grid.SetCellValue(linha, 8, row[10])
                 self.grid.SetCellAlignment(linha, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
                 self.grid.SetCellAlignment(linha, 3, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
                 self.grid.SetCellAlignment(linha, 4, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
                 self.grid.SetCellAlignment(linha, 5, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
 
-        self.txtTotalProventos.SetValue(formata_numero(self.totalProventos))
-        self.txtTotalPendente.SetValue(formata_numero(self.totalPendente))
+        self.txtTotalProventos.SetValue(formata_numero(self.total_proventos))
+        self.txtTotalPendente.SetValue(formata_numero(self.total_pendente))
         
         # Saldo bancario
-        saldoBancario = Conta.getSaldoBancario(self.idConta)
-        self.txtSaldoBancario.SetValue(formata_numero(saldoBancario))
+        saldo_bancario = Conta.getSaldoBancario(self.id_conta)
+        self.txtSaldoBancario.SetValue(formata_numero(saldo_bancario))
 
     def on_left_click(self, event):
         row = event.GetRow()  # Obtém a linha clicada
         col = event.GetCol()  # Obtém a coluna clicada
-        #self.empresaSelecionada(row)
 
     def on_right_click(self, event):
         row = event.GetRow()  # Obtém a linha clicada
         col = event.GetCol()  # Obtém a coluna clicada
-        self.linhaDaGridSelecionada(row)
+        self.linha_da_grid_selecionada(row)
 
     def indiceCb(self, cb, chave):
         indice = 0
@@ -391,25 +358,23 @@ class FrmProvento(FrameMG):
 
         return indice
 
-    def linhaDaGridSelecionada(self, item):
-        idSelecionado = self.grid.GetCellValue(item, 0)
+    def linha_da_grid_selecionada(self, item):
+        id_selecionado = self.grid.GetCellValue(item, 0)
 
-        if idSelecionado.isdigit():
-            self.provento.selectById(idSelecionado)
+        if id_selecionado.isdigit():
+            self.provento.select_by_id(id_selecionado)
 
             self.txtId.SetValue(str(self.provento.id))
-            self.txtSiglaAtivo.SetValue(self.provento.ativo.sigla)
-            #self.txtDataRecebimento.SetValue(self.provento.datarecebimento.strftime('%d/%m/%Y'))
+            self.txtSiglaAtivo.SetValue(self.provento.sigla_ativo)
 
-            data_str = self.provento.datarecebimento.strftime('%d/%m/%Y')
+            data_str = self.provento.data_recebimento.strftime('%d/%m/%Y')
             data_formatada = datetime.strptime(data_str, '%d/%m/%Y').date()
             self.txtDataRecebimento.SetValue(data_formatada)
 
-            self.txtValorBruto.SetValue(str(formata_numero(self.provento.valorbruto)))
-            self.txtValorIr.SetValue(str(formata_numero(self.provento.valorir)))
+            self.txtValorBruto.SetValue(str(self.provento.valor_bruto))
+            self.txtValorIr.SetValue(str(self.provento.valor_ir))
 
-            self.cbTipoProvento.SetSelection(self.indiceCb(self.cbTipoProvento, self.provento.nomeprovento))
-            #self.cbConta.SetSelection(self.indiceCb(self.cbConta, self.provento.conta.nomeConta))
+            self.cbTipoProvento.SetSelection(self.indiceCb(self.cbTipoProvento, self.provento.nome_provento))
 
             if self.provento.pago:
                 self.rb_Pago.SetSelection(0)  # Seleciona "Pago"
@@ -434,7 +399,7 @@ class FrmProvento(FrameMG):
             self.insert = False
 
     def habilita_novo(self, event):
-        self.limpaElementos()
+        self.limpa_elementos()
         self.txtSiglaAtivo.Enable()
         self.txtDataRecebimento.Enable()
         self.txtValorBruto.Enable()
@@ -454,37 +419,42 @@ class FrmProvento(FrameMG):
         if len(self.txtValorBruto.GetValue()) <= 0: self.txtValorBruto.SetValue('0.0')
         if len(self.txtValorIr.GetValue()) <= 0: self.txtValorIr.SetValue('0.0')
 
-        self.provento.set_valorbruto(float(str(self.txtValorBruto.GetValue()).replace(',','.')))
-        self.provento.set_valorir(float(str(self.txtValorIr.GetValue()).replace(',','.')))
+        aux = self.txtValorBruto.GetValue()
+        aux = aux.replace('.','')
+        aux = aux.replace(',','.')
+        self.provento.set_valor_bruto(float(aux))
+        aux = self.txtValorIr.GetValue()
+        aux = aux.replace('.','')
+        aux = aux.replace(',','.')
+        self.provento.set_valor_ir(float(aux))
 
-        liquido = self.provento.valorbruto - self.provento.valorir
+        liquido = self.provento.valor_bruto - self.provento.valor_ir
         self.txtLiquido.SetValue(str(formata_numero(liquido)))
 
     def cancela_operacao(self, event):
         self.provento.clear()
-        self.limpaElementos()
-        self.disabilitaComponentes()
+        self.limpa_elementos()
+        self.disabilita_componentes()
 
     def salva_elemento(self, event):
-        #self.provento.set_datarecebimento(devolveDate(self.txtDataRecebimento.Value))
-        self.provento.set_datarecebimento(self.txtDataRecebimento.GetValue().Format('%d/%m/%Y'))
+        self.provento.set_data_recebimento(self.txtDataRecebimento.GetValue().Format('%d/%m/%Y'))
 
         if len(self.txtValorBruto.GetValue()) <= 0: self.txtValorBruto.SetValue('0.0')
         if len(self.txtValorIr.GetValue()) <= 0: self.txtValorIr.SetValue('0.0')
 
-        self.provento.set_valorbruto(float(str(self.txtValorBruto.GetValue()).replace(',','.')))
-        self.provento.set_valorir(float(str(self.txtValorIr.GetValue()).replace(',','.')))
-        self.provento.set_siglaativo(self.txtSiglaAtivo.GetValue())
-        self.provento.set_nometipoprovento(self.cbTipoProvento.GetStringSelection())
-        self.provento.set_nomeconta(self.cbConta.GetStringSelection())
+        self.provento.set_valor_bruto(float(str(self.txtValorBruto.GetValue()).replace(',','.')))
+        self.provento.set_valor_ir(float(str(self.txtValorIr.GetValue()).replace(',','.')))
+        self.provento.set_sigla_ativo(self.txtSiglaAtivo.GetValue())
+        self.provento.set_nome_tipo_provento(self.cbTipoProvento.GetStringSelection())
+        self.provento.set_nome_conta(self.cbConta.GetStringSelection())
         aux = self.rb_Pago.GetStringSelection()
         if aux == 'Pago': self.provento.set_pago(True)
         else: self.provento.set_pago(False)
 
         validado = True
-        if self.provento.valorbruto <= 0: validado = False
-        if self.provento.idtipoprovento < 0: validado = False
-        if self.provento.idconta < 0: validado = False
+        if self.provento.valor_bruto <= 0: validado = False
+        if self.provento.id_tipo_provento < 0: validado = False
+        if self.provento.id_conta < 0: validado = False
         if validado:
             try:
                 if self.insert is True:
@@ -493,7 +463,7 @@ class FrmProvento(FrameMG):
                 else:
                     self.provento.update()
                 self.cancela_operacao(event)
-                self.montaGrid(self.dataInicial)
+                self.monta_grid(self.dataInicial)
             except  Exception as e:
                 dlg = wx.MessageDialog(None, str(e), 'Erro ao salvar provento!', wx.OK | wx.ICON_ERROR)
                 result = dlg.ShowModal()
@@ -501,7 +471,7 @@ class FrmProvento(FrameMG):
             dlg = wx.MessageDialog(None, 'Verifique os valores informados!' , 'Erro ao salvar provento!', wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
 
-    def deletaElemento(self, event):
+    def deleta_elemento(self, event):
         prossegueEliminacao = False
         dlg = wx.MessageDialog(None, 'Confirma a eliminação dos dados?',
                                'Prestes a eliminar definitivamente!',
@@ -512,7 +482,7 @@ class FrmProvento(FrameMG):
         if prossegueEliminacao:
             self.provento.delete()
             self.cancela_operacao(event)
-            self.montaGrid(self.dataInicial)
+            self.monta_grid(self.dataInicial)
 
 def main():
     app = wx.App()

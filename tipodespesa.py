@@ -86,10 +86,9 @@ class TipoDespesa:
         con.close()
 
     @staticmethod
-    def mc_select_by_id(self, arg):
+    def mc_select_by_id(arg):
         con = TipoDespesa.getConexao()
         cursor = con.cursor()
-        self.clear()
         cursor.execute("SELECT id, nomedespesa FROM tipodespesa WHERE id = %s", (arg,))
         lista = cursor.fetchone()
         con.close()

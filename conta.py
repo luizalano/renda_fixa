@@ -141,7 +141,7 @@ class Conta:
         self.con.close()
 
     @staticmethod
-    def selectOneById(id):
+    def mc_select_one_by_id(id):
         try:
             conexao = ConectaBD.retornaConexao()
         except Exception as e:
@@ -157,7 +157,7 @@ class Conta:
         else: return None
 
     @staticmethod
-    def selectOneByNome(nome):
+    def mc_select_one_by_nome(nome):
         try:
             conexao = ConectaBD.retornaConexao()
         except Exception as e:
@@ -175,7 +175,7 @@ class Conta:
             return None
 
     @staticmethod
-    def selectAll():
+    def mc_select_all():
         try:
             conexao = ConectaBD.retornaConexao()
         except Exception as e:
@@ -183,7 +183,7 @@ class Conta:
             return False
         cursor = conexao.cursor()
         #with self.conexao.cursor as cursor:
-        clausulaSql = "SELECT id, numerobanco, numeroagencia, iban, nomeconta, numeroconta, digito_conta, idmoeda " \
+        clausulaSql = "SELECT id, numerobanco, numeroagencia, iban, nomeconta, numeroconta, digitoconta, idmoeda " \
                       "FROM conta order by nomeconta"
         cursor.execute(clausulaSql)
         lista = cursor.fetchall()

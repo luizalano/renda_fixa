@@ -11,15 +11,17 @@ class Despesas():
     id = 0
     data_lancamento = None
     descricao = ''
-    numeronota = ''
+    numero_nota = ''
     valor = 0.0
-    idConta = -1
-    idTipoDespesa = -1
-    tamdescricao = 0
-    tamnumeronota = 0
+    id_conta = -1
+    id_tipo_despesa = -1
 
     def __init__(self):
-        self.defineTamanhos()
+        self.tam_descricao = 0
+        self.tam_numero_nota = 0
+        self.nome_base = ConectaBD.mc_retorna_nome_base()
+        self.define_tamanhos()
+        
 
     @staticmethod
     def getConexao():
@@ -30,11 +32,11 @@ class Despesas():
             print(f"Erro ao conectar com o banco: {e}")
             return False
 
-    def defineTamanhos(self):
-        self.tamdescricao = self.sqlBuscaTamanho('descricao')
-        self.tamnumeronota = self.sqlBuscaTamanho('numeronota')
+    def define_tamanhos(self):
+        self.tam_descricao = self.sql_busca_tamanho('descricao')
+        self.tam_numero_nota = self.sql_busca_tamanho('numeronota')
 
-    def getAll(self):
+    def get_all(self):
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
@@ -56,21 +58,21 @@ class Despesas():
 
         return lista
 
-    def clearDespesas(self):
-        self.setid(-1)
-        self.setdescricao('')
-        self.setnumeronota('')
-        self.setdata_lancamento(None)
-        self.setvalor(0.0)
-        self.setidConta(-1)
-        self.setidTipoDespesa(-1)
+    def clear_despesas(self):
+        self.set_id(-1)
+        self.set_descricao('')
+        self.set_numero_nota('')
+        self.set_data_lancamento(None)
+        self.set_valor(0.0)
+        self.set_id_conta(-1)
+        self.set_id_tipo_despesa(-1)
 
-    def populaDespesasById(self, arg):
+    def popula_despesas_by_id(self, arg):
         clausulaSql = 'select id, datalancamento, descricao, valor, idconta, idtipodespesa, numeronota ' \
                       'from despesas ' \
                       'where id = ' + str(arg) + ' order by datalancamento;'
 
-        self.cursor = self.getConexao()
+        self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
         try:
@@ -80,50 +82,49 @@ class Despesas():
             result = dlg.ShowModal()
 
         row = cursor.fetchone()
-        self.clearDespesas()
+        self.clear_despesas()
         if row != None:
-            self.setid(row[0])
-            self.setdata_lancamento(row[1])
-            self.setdescricao(row[2])
-            self.setvalor(row[3])
-            self.setidConta(row[4])
-            self.setidTipoDespesa(row[5])
-            self.setnumeronota(row[6])
+            self.set_id(row[0])
+            self.set_data_lancamento(row[1])
+            self.set_descricao(row[2])
+            self.set_valor(row[3])
+            self.set_id_conta(row[4])
+            self.set_id_tipo_despesa(row[5])
+            self.set_numero_nota(row[6])
 
         self.conexao.close()
 
-    def setid(self, arg):
+    def set_id(self, arg):
         self.id = arg
-    def setdescricao(self, arg):
+    def set_descricao(self, arg):
         if arg is None:
             arg = ''
-        self.descricao = arg[0:self.tamdescricao]
-    def setnumeronota(self, arg):
+        self.descricao = arg[0:self.tam_descricao]
+    def set_numero_nota(self, arg):
         if arg is None:
             arg = ''
         #arg = arg.title()
-        self.numeronota = arg[0:self.tamnumeronota]
-    def setdata_lancamento(self, arg):
+        self.numero_nota = arg[0:self.tam_numero_nota]
+    def set_data_lancamento(self, arg):
         self.data_lancamento = devolveDate(arg)
-    def setvalor(self, arg):
+    def set_valor(self, arg):
         self.valor = devolveFloat(arg)
-    def setidConta(self, arg):
-        self.idConta = 1
-        lista = Conta.selectOneById(arg)
+    def set_id_conta(self, arg):
+        self.id_conta = 1
+        lista = Conta.mc_select_one_by_id(arg)
         if lista:
-            self.idConta = lista[0]
-    def setidTipoDespesa(self, arg):
-        self.idTipoDespesa = -1
+            self.id_conta = lista[0]
+    def set_id_tipo_despesa(self, arg):
+        self.id_tipo_despesa = -1
         lista = TipoDespesa.mc_select_by_id(arg)
         if lista:
-            self.idTipoDespesa = lista[0]
-
-    def sqlBuscaTamanho(self, coluna):
+            self.id_tipo_despesa = lista[0]
+    def sql_busca_tamanho(self, coluna):
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
         clausulaSql = "select character_maximum_length from INFORMATION_SCHEMA.COLUMNS "
-        clausulaSql += "where table_catalog = 'b3' and table_name = 'despesas'"
+        clausulaSql += "where table_catalog = '" + self.nome_base + "' and table_name = 'despesas'"
         clausulaSql += "and column_name = '" + coluna + "';"
 
         try:
@@ -145,23 +146,24 @@ class Despesas():
         cursor = self.conexao.cursor()
 
         try:
-            cursor.execute(clausulaSql, (self.data_lancamento, self.descricao, self.valor, self.idConta, self.idTipoDespesa, self.numeronota))
+            cursor.execute(clausulaSql, 
+                           (self.data_lancamento, self.descricao, self.valor, self.id_conta, self.id_tipo_despesa, self.numero_nota))
             self.conexao.commit()
         except  Exception as e:
             dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao inserir despesa', wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
-
-        self.conexao.close()
+        finally:
+            self.conexao.close()
 
     def update(self):
         clausulaSql = 'update despesas set '
 
         clausulaSql += "descricao = '" + tiraAspas(self.descricao) + "', "
-        clausulaSql += "numeronota = '" + tiraAspas(self.numeronota) + "', "
+        clausulaSql += "numeronota = '" + tiraAspas(self.numero_nota) + "', "
         clausulaSql += "id = " + str(self.id) + ", "
         clausulaSql += "datalancamento = '" + str(self.data_lancamento) + "', "
-        clausulaSql += "idconta = " + str(self.idConta) + ", "
-        clausulaSql += "idtipodespesa = " + str(self.idTipoDespesa) + ", "
+        clausulaSql += "idconta = " + str(self.id_conta) + ", "
+        clausulaSql += "idtipodespesa = " + str(self.id_tipo_despesa) + ", "
         clausulaSql += "valor = " + str(self.valor) + " "
         clausulaSql += "where id = " + str(self.id) + ";"
 
@@ -174,30 +176,24 @@ class Despesas():
         except  Exception as e:
             dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao atualizar despesa <' + self.id + '>', wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
-
-        self.conexaoclose()
+        finally:
+            self.conexao.close()
 
     def delete(self):
-        clausulaSql = 'delete from despesas '
-        clausulaSql += "where id = " + str(self.id) + ";"
-
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
         try:
-            cursor.execute(clausulaSql)
-            self.conexaocommit()
+            cursor.execute("delete from despesas where id = %s", (self.id,))
+            self.conexao.commit()
         except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao eliminar despesa <' + self.id + '>', wx.OK | wx.ICON_ERROR)
+            dlg = wx.MessageDialog(None, str(e), 'Erro ao eliminar despesa <' + str(self.id) + '>', wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
-
-        self.conexao.close()
+        finally:
+            self.conexao.close()
 
     @staticmethod
-    def buscaPorPeriodo(arg, idconta):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost",
-                                        port="5432")
-        
+    def mc_busca_por_periodo(arg, idconta):
         conexao = Despesas.getConexao() 
         cursor = conexao.cursor()   
         clausulaSql = ''
@@ -221,7 +217,7 @@ class Despesas():
             return lista
 
     @staticmethod
-    def buscaTipos():
+    def mc_busca_tipos():
         conexao = Despesas.getConexao() 
         cursor = conexao.cursor()
         
@@ -237,7 +233,7 @@ class Despesas():
             return lista
 
     @staticmethod
-    def buscaTipoPorNome(arg):
+    def mc_busca_tipo_por_nome(arg):
         conexao = Despesas.getConexao() 
         cursor = conexao.cursor()
         
@@ -254,7 +250,7 @@ class Despesas():
             return lista
 
     @staticmethod
-    def buscaTipoPorId(arg):
+    def mc_busca_tipo_por_id(arg):
         conexao = Despesas.getConexao() 
         cursor = conexao.cursor()
         
@@ -270,4 +266,55 @@ class Despesas():
         finally:
             return lista
 
+    @staticmethod
+    def mc_busca_todas_despesas_por_mes():
+        try:
+            conn = Despesas.getConexao()
+            cursor = conn.cursor()
 
+            consulta = '''
+                SELECT 
+                    TO_CHAR(d.datalancamento, 'YYYY/MM') AS mes_ano,
+                    t.nomedespesa,
+                    SUM(d.valor) AS total
+                FROM despesas d
+                JOIN tipodespesa t ON d.idtipodespesa = t.id
+                GROUP BY mes_ano, t.nomedespesa
+                ORDER BY mes_ano;
+            '''
+
+            cursor.execute(consulta)
+            lista = cursor.fetchall()
+
+        except  Exception as e:
+            dlg = wx.MessageDialog(None, str(e), 'Erro ao buscar despesas por mês', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+            lista = None
+        finally:
+            conn.close()
+            return lista
+        
+    @staticmethod
+    def mc_busca_despesas_por_mes_ano(mes, ano):
+        try:
+            conn = Despesas.getConexao()
+            cursor = conn.cursor()
+            
+            consulta = '''
+                SELECT d.datalancamento, t.nomedespesa, SUM(d.valor) AS total 
+                FROM despesas d JOIN tipodespesa t ON d.idtipodespesa = t.id 
+                WHERE EXTRACT(year FROM d.datalancamento) = %s and EXTRACT(month FROM d.datalancamento) = %s  
+                GROUP BY d.datalancamento, t.nomedespesa ORDER BY d.datalancamento;
+            '''
+
+            cursor.execute(consulta, (ano, mes))
+            lista = cursor.fetchall()
+
+        except  Exception as e:
+            dlg = wx.MessageDialog(None, str(e), 'Erro ao buscar despesas por mês', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+            lista = None
+        finally:
+            conn.close()
+            return lista
+        

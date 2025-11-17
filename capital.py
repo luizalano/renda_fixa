@@ -9,13 +9,14 @@ class Capital():
     id = 0
     data_lancamento = 11
     descricao = ''
-    idConta = -1
-    nomeConta = ''
+    id_conta = -1
+    nome_conta = ''
     valor = 0.0
-    tamdescricao = 0
+    tam_descricao = 0
 
     def __init__(self):
-        self.defineTamanhos()
+        self.nome_base = ConectaBD.mc_retorna_nome_base()
+        self.define_tamanhos()
 
     @staticmethod
     def getConexao():
@@ -26,10 +27,10 @@ class Capital():
             print(f"Erro ao conectar com o banco: {e}")
             return False
 
-    def defineTamanhos(self):
-        self.tamdescricao = self.sqlBuscaTamanho('descricao')
+    def define_tamanhos(self):
+        self.tam_descricao = self.sql_busca_tamanho('descricao')
 
-    def getAll(self):
+    def get_all(self):
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
         clausulaSql = 'select cp.id, cp.datalancamento, cp,descricao, cp.valor, cp.idConta, cn.nomeconta ' \
@@ -50,14 +51,14 @@ class Capital():
 
         return lista
 
-    def clearCapital(self):
-        self.setid(-1)
-        self.setdescricao('')
-        self.setdata_lancamento('')
-        self.setvalor(0.0)
-        self.setidConta(-1)
+    def clear_capital(self):
+        self.set_id(-1)
+        self.set_descricao('')
+        self.set_data_lancamento('')
+        self.set_valor(0.0)
+        self.set_id_conta(-1)
 
-    def populaCapitalById(self, arg):
+    def popula_capital_by_id(self, arg):
         clausulaSql = 'select cp.id, cp.datalancamento, cp.descricao, cp.valor, cp.idConta, cn.nomeconta ' \
                       'from capital as cp join conta as cn on cp.idconta = cn.id ' \
                       'where cp.id = ' + str(arg) + ' order by datalancamento;'
@@ -72,41 +73,41 @@ class Capital():
             result = dlg.ShowModal()
 
         row = cursor.fetchone()
-        self.clearCapital()
+        self.clear_capital()
         if row != None:
-            self.setid(row[0])
-            self.setdata_lancamento(row[1])
-            self.setdescricao(row[2])
-            self.setvalor(row[3])
-            self.setidConta(row[4])
+            self.set_id(row[0])
+            self.set_data_lancamento(row[1])
+            self.set_descricao(row[2])
+            self.set_valor(row[3])
+            self.set_id_conta(row[4])
 
         self.conexao.close()
 
-    def setid(self, arg):
+    def set_id(self, arg):
         self.id = arg
-    def setdescricao(self, arg):
+    def set_descricao(self, arg):
         if arg is None:
             arg = ''
         #arg = arg.title()
-        self.descricao = arg[0:self.tamdescricao]
-    def setdata_lancamento(self, arg):
+        self.descricao = arg[0:self.tam_descricao]
+    def set_data_lancamento(self, arg):
         self.data_lancamento = devolveDate(arg)
-    def setvalor(self, arg):
+    def set_valor(self, arg):
         self.valor = devolveFloat(arg)
-    def setidConta(self, arg):
-        self.idConta = -1
-        self.nomeConta = ''
-        lista = Conta.selectOneById(arg)
+    def set_id_conta(self, arg):
+        self.id_conta = -1
+        self.nome_conta = ''
+        lista = Conta.mc_select_one_by_id(arg)
         if lista:
-            self.idConta = lista[0]
-            self.nomeConta = lista[4]
+            self.id_conta = lista[0]
+            self.nome_conta = lista[4]
 
-    def sqlBuscaTamanho(self, coluna):
+    def sql_busca_tamanho(self, coluna):
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
         clausulaSql = "select character_maximum_length from INFORMATION_SCHEMA.COLUMNS "
-        clausulaSql += "where table_catalog = 'b3' and table_name = 'capital'"
+        clausulaSql += "where table_catalog = '" + self.nome_base + "' and table_name = 'capital'"
         clausulaSql += "and column_name = '" + coluna + "';"
 
         try:
@@ -128,7 +129,7 @@ class Capital():
         cursor = self.conexao.cursor()
 
         try:
-            cursor.execute(clausulaSql,(self.data_lancamento, self.descricao, self.valor, self.idConta))
+            cursor.execute(clausulaSql,(self.data_lancamento, self.descricao, self.valor, self.id_conta))
             self.conexao.commit()
         except  Exception as e:
             dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao inserir lançamento de Capital!', wx.OK | wx.ICON_ERROR)
@@ -143,7 +144,7 @@ class Capital():
         cursor = self.conexao.cursor()
 
         try:
-            cursor.execute(clausulaSql, (self.descricao, self.data_lancamento, self.valor, self.idConta, self.id))
+            cursor.execute(clausulaSql, (self.descricao, self.data_lancamento, self.valor, self.id_conta, self.id))
             self.conexao.commit()
         except  Exception as e:
             dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao atualizar lançamento de Capital <' + self.id + '>', wx.OK | wx.ICON_ERROR)
@@ -168,7 +169,7 @@ class Capital():
         self.conexao.close()
 
     @staticmethod
-    def buscaPorPeriodo(arg, idConta):
+    def mc_busca_por_periodo(arg, idConta):
         conexao = Capital.getConexao()
         cursor = conexao.cursor()
 

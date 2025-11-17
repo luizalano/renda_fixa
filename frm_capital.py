@@ -71,7 +71,7 @@ class FrmCapital(FrameMG):
 
         label03, self.txtDescricao = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 3),
                                                            label='Descrição', tamanho = (40, 1),
-                                                           max=self.capital.sqlBuscaTamanho('descricao'), multi=False)
+                                                           max=self.capital.sql_busca_tamanho('descricao'), multi=False)
 
         label03, self.txtValor = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 4),
                                                     label='Valor', tamanho = (15, 1),
@@ -147,13 +147,13 @@ class FrmCapital(FrameMG):
         return indice
 
     def enche_combo_contas(self):
-        lista = Conta.selectAll()
+        lista = Conta.mc_select_all()
         self.cbConta.Clear()
         for row in lista:
             self.cbConta.Append(row[4])
 
     def set_conta(self, idConta):
-        lista = Conta.selectOneById(idConta)
+        lista = Conta.mc_select_one_by_id(idConta)
         if lista:
             self.cbConta.SetSelection(self.indice_cb(self.cbConta, lista[4]))
             self.conta_selecionada(None)
@@ -161,7 +161,7 @@ class FrmCapital(FrameMG):
     def conta_selecionada(self, event):
         nomeConta = self.cbConta.GetStringSelection()
         listaConta = None
-        listaConta = Conta.selectOneByNome(nomeConta)
+        listaConta = Conta.mc_select_one_by_nome(nomeConta)
         self.idConta = -1
         if listaConta:
             self.idConta = listaConta[0]
@@ -169,7 +169,7 @@ class FrmCapital(FrameMG):
                 self.txtNomeMoeda.SetValue(listaConta[8])
                 self.txtValorMoeda.SetValue('')
             else:
-                lista = Cotacao.getultimacotacao(listaConta[7])
+                lista = Cotacao.mc_get_ultima_cotacao(listaConta[7])
                 if lista:
                     self.txtNomeMoeda.SetValue(lista[1])
                     self.txtValorMoeda.SetValue(formata_numero(lista[0]))
@@ -183,7 +183,7 @@ class FrmCapital(FrameMG):
             self.txtValorMoeda.SetValue('')
 
     def limpa_elementos(self):
-        self.capital.clearCapital()
+        self.capital.clear_capital()
 
         self.txtId.Clear()
         self.txtDescricao.Clear()
@@ -210,7 +210,7 @@ class FrmCapital(FrameMG):
             self.monta_grid(self.dataInicial)
 
     def monta_grid(self, arg):
-        self.lista = Capital.buscaPorPeriodo(arg, self.idConta)
+        self.lista = Capital.mc_busca_por_periodo(arg, self.idConta)
         self.grid.ClearGrid()
         self.totalAporte = 0.0
         self.totalRetirada = 0.0
@@ -258,17 +258,15 @@ class FrmCapital(FrameMG):
         idSelecionado = self.grid.GetCellValue(item, 0)
 
         if idSelecionado.isdigit():
-            self.capital.populaCapitalById(idSelecionado)
+            self.capital.popula_capital_by_id(idSelecionado)
 
-            self.txtId.SetValue(str(self.capital.getid()))
-            self.txtDescricao.SetValue(self.capital.getdescricao())
-            #self.txtDataLancamento.SetValue(self.capital.getdata_lancamento().strftime('%d/%m/%Y'))
-
-            data_str = self.capital.getdata_lancamento().strftime('%d/%m/%Y')
+            self.txtId.SetValue(str(self.capital.id))
+            self.txtDescricao.SetValue(self.capital.descricao)
+            data_str = self.capital.data_lancamento.strftime('%d/%m/%Y')
             data_formatada = datetime.strptime(data_str, '%d/%m/%Y').date()
             self.txtDataLancamento.SetValue(data_formatada)
 
-            self.txtValor.SetValue(str(self.capital.getvalor()))
+            self.txtValor.SetValue(str(self.capital.valor))
 
             self.txtDescricao.Enable()
             self.txtDataLancamento.Enable()
@@ -295,16 +293,16 @@ class FrmCapital(FrameMG):
         self.txtDataLancamento.SetFocus()
 
     def cancela_operacao(self, event):
-        self.capital.clearCapital()
+        self.capital.clear_capital()
         self.limpa_elementos()
 
     def salva_elemento(self, event):
         #data_selecionada = self.txtDataLancamento.GetValue()
         #data_formatada = self.txtDataLancamento.GetValue().Format('%Y-%m-%d')
-        self.capital.setdata_lancamento(self.txtDataLancamento.GetValue().Format('%d/%m/%Y'))
-        self.capital.setdescricao(self.txtDescricao.Value)
-        self.capital.setvalor(devolveFloat(str(self.txtValor.Value).replace('.', ',')))
-        self.capital.setidConta(self.idConta)
+        self.capital.set_data_lancamento(self.txtDataLancamento.GetValue().Format('%d/%m/%Y'))
+        self.capital.set_descricao(self.txtDescricao.Value)
+        self.capital.set_valor(devolveFloat(str(self.txtValor.Value).replace('.', ',')))
+        self.capital.set_id_conta(self.idConta)
 
         if self.insert is True:
             self.capital.insere()

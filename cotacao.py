@@ -82,7 +82,6 @@ class Cotacao:
             print(f"Erro ao conectar com o banco: {e}")
             return False
 
-
     @staticmethod
     def classe_selectAll():
         con = Cotacao.getConexao()
@@ -95,6 +94,18 @@ class Cotacao:
             return lista
             
         con.close()
+
+    @staticmethod
+    def mc_get_ultima_cotacao(moeda):
+        conexao = Cotacao.getConexao()
+        if conexao:
+            clausulaSql = """ 
+                        SELECT c.valorcotacao, m.nomemoeda FROM cotacao as c join moeda as m on m.id = c.idmoeda 
+                        WHERE c.datacotacao = (SELECT MAX(datacotacao) FROM cotacao) and c.idmoeda = %s;
+                        """
+            with conexao.cursor() as cursor:
+                cursor.execute(clausulaSql, (moeda,))
+                return cursor.fetchone()
 
 
 def main():

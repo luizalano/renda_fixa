@@ -2,7 +2,7 @@
 import wx.grid
 #import psycopg2
 #from dataBaseFunctionMG import *
-from Cotacao import *
+from cotacao import *
 from diversos import *
 from collections import defaultdict
 
@@ -188,7 +188,7 @@ class FrmRendaTotal(wx.Frame):
             if nomemoeda == 'REAL':
                 cotacao, nome = 1, nomemoeda
             else:
-                cotacao, nome = Cotacao.getultimacotacao(id)
+                cotacao, nome = Cotacao.mc_get_ultima_cotacao(id)
             self.cotacao.append([id, nomemoeda, cotacao])
 
     def buscaCotacao(self, conta):

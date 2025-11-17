@@ -13,7 +13,17 @@ from datetime import datetime
 
 class Provento:
     def __init__(self):
-        self.clear()
+        self.id = -1
+        self.id_ativo = -1
+        self.sigla_ativo = ''
+        self.data_recebimento = ''
+        self.valor_bruto = 0.0
+        self.valor_ir = 0.0
+        self.pago = True
+        self.id_tipo_provento = -1
+        self.nome_provento = ''
+        self.id_conta = -1
+
         self.conexao = None
 
     @staticmethod
@@ -25,81 +35,86 @@ class Provento:
             print(f"Erro ao conectar com o banco: {e}")
             return False
 
-    def set_idativo(self, arg):
-        lista = Ativo.verificaAtivoPorId(arg)
+    def set_id_ativo(self, arg):
+        lista = Ativo.mc_verifica_ativo_por_id(arg)
         if lista:
-            self.idativo = arg
+            self.id_ativo = lista[0]
+            self.sigla_ativo = lista[2]
         else:
-            self.idativo = -1
+            self.id_ativo = -1
+            self.sigla_ativo = ''
 
-    def set_siglaativo(self, arg):
-        lista = Ativo.verificaAtivoPorSigla(arg)
+    def set_sigla_ativo(self, arg):
+        lista = Ativo.mc_verifica_ativo_por_sigla(arg)
         if lista:
-            self.idativo = lista[0]
+            self.id_ativo = lista[0]
+            self.sigla_ativo = lista[2]
         else:
-            self.idativo = -1
+            self.id_ativo = -1
+            self.sigla_ativo = ''
 
-    def set_idconta(self, arg):
-        lista = Conta.selectOneById(arg)
+    def set_id_conta(self, arg):
+        lista = Conta.mc_select_one_by_id(arg)
         if lista:
-            self.idconta = arg
+            self.id_conta = arg
         else:
-            self.idconta = -1
+            self.id_conta = -1
 
-    def set_nomeconta(self, arg):
-        lista = Conta.selectOneByNome(arg)
+    def set_nome_conta(self, arg):
+        lista = Conta.mc_select_one_by_nome(arg)
         if lista:
-            self.idconta = lista[0]
+            self.id_conta = lista[0]
         else:
-            self.idconta = -1
+            self.id_conta = -1
 
-    def set_datarecebimento(self, arg):
-        self.datarecebimento = devolveDate(arg)
+    def set_data_recebimento(self, arg):
+        self.data_recebimento = devolveDate(arg)
 
-    def set_valorbruto(self, arg):
+    def set_valor_bruto(self, arg):
         if isinstance(arg, (int, float)) and arg >= 0:
-            self.valorbruto = float(arg)
+            self.valor_bruto = float(arg)
         else:
-            self.valorbruto = 0.0
+            self.valor_bruto = 0.0
 
-    def set_valorir(self, arg):
+    def set_valor_ir(self, arg):
         if isinstance(arg, (int, float)) and arg >= 0:
-            self.valorir = float(arg)
+            self.valor_ir = float(arg)
         else:
-            self.valorir = 0.0
+            self.valor_ir = 0.0
 
     def set_pago(self, arg):
         if isinstance(arg, (bool)):
             self.pago = arg
 
-    def set_idtipoprovento(self, arg):
-        lista = TipoProvento.sm_recuperaPorId(arg)
+    def set_id_tipo_provento(self, arg):
+        lista = TipoProvento.sm_recupera_por_id(arg)
         if lista:
-            self.idtipoprovento = arg
-            self.nomeprovento = lista[1]
+            self.id_tipo_provento = arg
+            self.nome_provento = lista[1]
         else:
-            self.idtipoprovento = -1
-            self.nomeprovento = ''
+            self.id_tipo_provento = -1
+            self.nome_provento = ''
 
-    def set_nometipoprovento(self, arg):
-        lista = TipoProvento.sm_recuperaPorId(arg)
+    def set_nome_tipo_provento(self, arg):
+        lista = TipoProvento.sm_recupera_por_nome(arg)
         if lista:
-            self.idtipoprovento = lista[0]
-            self.nomeprovento = lista[1]
+            self.id_tipo_provento = lista[0]
+            self.nome_provento = lista[1]
         else:
-            self.idtipoprovento = -1
-            self.nomeprovento = ''
+            self.id_tipo_provento = -1
+            self.nome_provento = ''
 
     def clear(self):
         self.id = -1
-        self.idativo = -1
-        self.datarecebimento = ''
-        self.valorbruto = 0.0
-        self.valorir = 0.0
+        self.id_ativo = -1
+        self.sigla_ativo = ''
+        self.data_recebimento = ''
+        self.valor_bruto = 0.0
+        self.valor_ir = 0.0
         self.pago = True
-        self.idtipoprovento = -1
-        self.nomeprovento = ''
-        self.idconta = -1
+        self.id_tipo_provento = -1
+        self.nome_provento = ''
+        self.id_conta = -1
 
     def insert(self):
         self.conexao = Provento.getConexao()
@@ -107,7 +122,7 @@ class Provento:
             with self.conexao.cursor() as cursor:
                 cursor.execute(
                     "INSERT INTO proventos (idativo, datarecebimento, valorbruto, valorir, pago, idtipoprovento, idconta) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
-                    (self.ativo.id_ativo, self.datarecebimento, self.valorbruto, self.valorir, self.pago, self.idtipoprovento, self.idconta),
+                    (self.id_ativo, self.data_recebimento, self.valor_bruto, self.valor_ir, self.pago, self.id_tipo_provento, self.id_conta),
                 )
                 self.id = cursor.fetchone()[0]
                 self.conexao.commit()
@@ -122,7 +137,7 @@ class Provento:
                 cursor.execute(
                     "UPDATE proventos set idativo = %s, datarecebimento = %s, valorbruto = %s, "
                     "valorir = %s, pago = %s, idtipoprovento = %s, idconta = %s where id = %s;",
-                    (self.ativo.id_ativo, self.datarecebimento, self.valorbruto, self.valorir, self.pago, self.idtipoprovento, self.idconta, self.id),
+                    (self.id_ativo, self.data_recebimento, self.valor_bruto, self.valor_ir, self.pago, self.id_tipo_provento, self.id_conta, self.id),
                 )
                 self.conexao.commit()
                 self.conexao.close()
@@ -136,7 +151,7 @@ class Provento:
             self.conexao.commit()
             self.conexao.close()
 
-    def selectById(self, id):
+    def select_by_id(self, id):
         self.clear()
         self.conexao = Provento.getConexao()
         with self.conexao.cursor() as cursor:
@@ -144,16 +159,16 @@ class Provento:
             row = cursor.fetchone()
             if row:
                 self.id = row[0]
-                self.set_idativo(row[1])
-                self.set_datarecebimento(row[2])
-                self.set_valorbruto(row[3])
-                self.set_valorir(row[4])
+                self.set_id_ativo(row[1])
+                self.set_data_recebimento(row[2])
+                self.set_valor_bruto(row[3])
+                self.set_valor_ir(row[4])
                 self.set_pago(row[5])
-                self.set_idtipoprovento(row[6])
-                self.set_idconta(row[7])
+                self.set_id_tipo_provento(row[6])
+                self.set_id_conta(row[7])
             self.conexao.close()
 
-    def getAll(self):
+    def get_all(self):
         self.clear()
         self.conexao = Provento.getConexao()
         with self.conexao.cursor() as cursor:
@@ -169,16 +184,16 @@ class Provento:
             else: return None
 
     @staticmethod
-    def sm_buscaPorPeriodo(arg, idConta):
+    def sm_busca_por_periodo(data_inicial, id_conta):
         conexao = Provento.getConexao()
         clausulaSql = ''
-        if arg is None:
+        if data_inicial is None:
             clausulaSql = "SELECT p.id, p.idativo, p.datarecebimento, p.valorbruto, p.valorir, p.pago, p.idtipoprovento, " \
                            "p.idconta, a.sigla, tp.nometipoprovento, c.nomeconta FROM proventos as p " \
                            "join ativo as a on p.idativo = a.id " \
                            "join tipoprovento as tp on p.idtipoprovento =  tp.id " \
                            "join conta as c on p.idconta = c.id " \
-                           "where p.idconta = " + str(idConta) + " " \
+                           "where p.idconta = " + str(id_conta) + " " \
                            "order by datarecebimento, id"
         else:
             clausulaSql = "SELECT p.id, p.idativo, p.datarecebimento, p.valorbruto, p.valorir, p.pago, p.idtipoprovento, " \
@@ -186,7 +201,7 @@ class Provento:
                            "join ativo as a on p.idativo = a.id " \
                            "join tipoprovento as tp on p.idtipoprovento =  tp.id " \
                            "join conta as c on p.idconta = c.id " \
-                           "where p.datarecebimento >= '" + str(arg) + "' and p.idconta = " + str(idConta) + " " \
+                           "where p.datarecebimento >= '" + str(data_inicial) + "' and p.idconta = " + str(id_conta) + " " \
                            "order by datarecebimento, id ;"
         with conexao.cursor() as cursor:
             cursor.execute(clausulaSql)
@@ -196,7 +211,7 @@ class Provento:
             else: return None
 
     @staticmethod
-    def sm_buscaProventosPorContaAtivo(idativo, idconta, pago):
+    def sm_busca_proventos_por_conta_ativo(idativo, idconta, pago):
 
         conexao = Provento.getConexao()
         cursor = conexao.cursor()
@@ -237,18 +252,18 @@ class Provento:
 def main():
     provento = Provento()
 
-    provento.selectById(1)
-    print(provento.nomeprovento)
-    print(provento.valorbruto)
-    print(provento.datarecebimento)
+    provento.select_by_id(1)
+    print(provento.nome_provento)
+    print(provento.valor_bruto)
+    print(provento.data_recebimento)
     print(provento.pago)
-    print(provento.ativo.sigla)
+    
     print(' ')
-    provento.set_idtipoprovento('-1')
-    print(provento.nomeprovento)
+    provento.set_id_tipo_provento('-1')
+    print(provento.nome_provento)
     print(' ')
-    provento.set_idtipoprovento('3')
-    print(provento.nomeprovento)
+    provento.set_id_tipo_provento('3')
+    print(provento.nome_provento)
     print(' ')
 
     print('acabou')

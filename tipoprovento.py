@@ -64,7 +64,7 @@ class TipoProvento:
             self.set_nome_tipo_provento(row[1])
         con.close()
     @staticmethod
-    def sm_recuperaPorId(arg):
+    def sm_recupera_por_id(arg):
         con = TipoProvento.getConexao()
         cursor = con.cursor()
         cursor.execute("SELECT id, nometipoprovento FROM tipoprovento WHERE id = %s", (arg,))
@@ -73,7 +73,7 @@ class TipoProvento:
         return lista
 
     @staticmethod
-    def sm_recuperaPorNome(self, arg):
+    def sm_recupera_por_nome(arg):
         con = TipoProvento.getConexao()
         cursor = con.cursor()
         cursor.execute("SELECT id, nometipoprovento FROM tipoprovento WHERE upper(nometipoprovento) = upper(%s)", (arg,))
@@ -92,11 +92,11 @@ class TipoProvento:
 
 
     @staticmethod
-    def sm_selectAll():
+    def sm_select_all():
         con = TipoProvento.getConexao()
         cursor = con.cursor()
-        #with self.conexao.cursor as cursor:
-        cursor.execute("SELECT id, nometipoprovento FROM tipoprovento order by nometipoprovento order by id")
+        
+        cursor.execute("SELECT id, nometipoprovento FROM tipoprovento order by nometipoprovento")
         lista = cursor.fetchall()
         if lista:
             con.close()
@@ -124,7 +124,7 @@ def main():
 
     bolsa.delete()
 
-    lista = TipoProvento.sm_selectAll()
+    lista = TipoProvento.sm_select_all()
     print(lista)
     print('acabou')
 

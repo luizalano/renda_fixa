@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib import dates as mdates
 from buscaCotacoesAtivoPorDia import BuscaCotacaoBolsas
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-from Ativo import *
+from ativo import *
 from leHistoricoB3 import LeHistoricoB3
 
 class VariacaoFrm(wx.Frame):

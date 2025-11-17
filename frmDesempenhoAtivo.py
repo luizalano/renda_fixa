@@ -7,17 +7,17 @@ from frm_capital import *
 from carteiraFrm import *
 from cotacao import *
 #import pandas as pd
-#from Ativo import Ativo
+from ativo import Ativo
 #from wxFrameMG import FrameMG
 from diversos import *
 #from ferramentas import *
 #from datetime import date
 #from datetime import datetime
-from DespesaFrm import FrmDespesa
+from frm_despesa import FrmDespesa
 from AwesomeCotacao import AwesomeCotacao
 #from selecionaConta import SelecionaContaDialog
 from selecionaBolsa import SelecionaBolsaDialog
-from proventoFrm import FrmProvento
+from frm_provento import FrmProvento
 #from programasSimples.ImportaRadar import *
 from leRadarB3 import *
 from negociadoNoDiaFrm import *
@@ -373,7 +373,7 @@ class frmDesempenhoAtivo(FrameMG):
                     self.txtNomeMoeda.SetValue(listaConta[8])
                     self.txtValorMoeda.SetValue('')
                 else:
-                    lista = Cotacao.getultimacotacao(listaConta[7], self.nomeBolsa)
+                    lista = Cotacao.mc_get_ultima_cotacao(listaConta[7], self.nomeBolsa)
                     if lista:
                         self.txtNomeMoeda.SetValue(lista[1])
                         self.txtValorMoeda.SetValue(formata_numero(lista[0]))

@@ -376,7 +376,7 @@ class FrmNegociadoNoDia(FrameMG):
             self.cancela_operacao(event)
             self.dataSelecionada(event)
 
-    def deletaElemento(self, event):
+    def deleta_elemento(self, event):
         prossegueEliminacao = False
         dlg = wx.MessageDialog(None, 'Confirma a eliminação dos dados?',
                                'Prestes a eliminar definitivamente!',

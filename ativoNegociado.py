@@ -103,14 +103,14 @@ class AtivoNegociado():
 
     def buscaProventos(self, idconta, pago):
         self.proventos.clear()
-        self.proventos = Provento.sm_buscaProventosPorContaAtivo(self.id_ativo, idconta, pago)
+        self.proventos = Provento.sm_busca_proventos_por_conta_ativo(self.id_ativo, idconta, pago)
 
     def buscaTiposDeProventos(self):
-        lista = TipoProvento.sm_selectAll()
+        lista = TipoProvento.sm_select_all()
         return lista
 
     def buscaIdTipoDeProvento(self, arg):
-        lista = TipoProvento.sm_recuperaPorNome(arg)
+        lista = TipoProvento.sm_recupera_por_nome(arg)
         return lista[0]
 
     def populaAtivoBySigla(self, arg):
@@ -159,7 +159,7 @@ class AtivoNegociado():
         self.conexao.close()
 
     def existeAtivo(self, arg):
-        lista = Ativo.verificaAtivoPorSigla(arg)
+        lista = Ativo.mc_verifica_ativo_por_sigla(arg)
         self.clearAtivo()
         retorno = False
         if lista:

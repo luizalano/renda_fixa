@@ -1,9 +1,9 @@
 # coding: utf-8
 
 from diversos import *
-from Ativo import *
-from Cotacao import Cotacao
-from Conta import Conta
+from ativo import *
+from cotacao import Cotacao
+from conta import Conta
 from wxFrameMG import FrameMG
 import psycopg2
 #from ClienteDeQuem import ClienteDeQuem
@@ -115,7 +115,7 @@ class FrmCarteira(FrameMG):
         self.Show()
 
     def encheComboContas(self):
-        lista = Conta.selectAll()
+        lista = Conta.mc_select_all()
         self.cbConta.Clear()
         for row in lista:
             self.cbConta.Append(row[4])
@@ -168,7 +168,7 @@ class FrmCarteira(FrameMG):
                 self.txtNomeMoeda.SetValue(listaConta[8])
                 self.txtValorMoeda.SetValue('')
             else:
-                lista = Cotacao.getultimacotacao(listaConta[7])
+                lista = Cotacao.mc_get_ultima_cotacao(listaConta[7])
                 if lista:
                     self.txtNomeMoeda.SetValue(lista[1])
                     self.txtValorMoeda.SetValue(formata_numero(lista[0]))

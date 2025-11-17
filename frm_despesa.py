@@ -7,8 +7,7 @@ from cotacao import Cotacao
 from conta import Conta
 from wxFrameMG import FrameMG
 from frm_resumoDespesas import FrmResumoDespesas
-from frmresumoDespesasMes import FrmResumoDespesasMes
-#from ClienteDeQuem import ClienteDeQuem
+from frm_resumoDespesasMes import FrmResumoDespesasMes
 
 import wx
 import wx.grid
@@ -17,8 +16,8 @@ from dateutil.relativedelta import relativedelta
 
 class FrmDespesa(FrameMG):
     insert = False
-    idConta = -1
-    idTipoDespesa = -1
+    id_conta = -1
+    id_tipo_despesa = -1
     caminho = '.\\icones\\'
     listaFase = []
     frmResumoDespesas = None
@@ -82,7 +81,7 @@ class FrmDespesa(FrameMG):
         
         label03, self.txtDescricao = self.criaCaixaDeTexto(self.painel, pos=(x0, 3),
                                                     label='Descrição', tamanho = (40, 1),
-                                                    max=self.despesas.sqlBuscaTamanho('descricao'), multi=False )
+                                                    max=self.despesas.sql_busca_tamanho('descricao'), multi=False )
 
         label105, self.txtNomeMoeda = self.criaCaixaDeTexto(self.painel, pos=(x0, 4),
                                                     label='Moeda da conta', tamanho = (15, 1),
@@ -189,13 +188,13 @@ class FrmDespesa(FrameMG):
             setattr(self, frame_attr, None)  # Define como None
     
     def encheComboContas(self):
-        lista = Conta.selectAll()
+        lista = Conta.mc_select_all()
         self.cbConta.Clear()
         for row in lista:
             self.cbConta.Append(row[4])
 
     def encheComboTipoDespesa(self):
-        lista = Despesas.buscaTipos()
+        lista = Despesas.mc_busca_tipos()
         self.cbTipoDespesa.Clear()
         for row in lista:
             self.cbTipoDespesa.Append(row[1])
@@ -214,7 +213,7 @@ class FrmDespesa(FrameMG):
         return indice
 
     def setConta(self, idConta):
-        lista = Conta.selectOneById(idConta)
+        lista = Conta.mc_select_one_by_id(idConta)
         self.btnMostraResumoPorTipo.Enabled = False
         if lista:
             self.cbConta.SetSelection(self.indiceCb(self.cbConta, lista[4]))
@@ -223,7 +222,7 @@ class FrmDespesa(FrameMG):
     def contaSelecionada(self, event):
         nomeConta = self.cbConta.GetStringSelection()
         listaConta = None
-        listaConta = Conta.selectOneByNome(nomeConta)
+        listaConta = Conta.mc_select_one_by_nome(nomeConta)
         self.btnMostraResumoPorTipo.Enabled = False
         self.idConta = -1
         if listaConta:
@@ -233,7 +232,7 @@ class FrmDespesa(FrameMG):
                 self.txtNomeMoeda.SetValue(listaConta[8])
                 self.txtValorMoeda.SetValue('')
             else:
-                lista = Cotacao.getultimacotacao(listaConta[7])
+                lista = Cotacao.mc_get_ultima_cotacao(listaConta[7])
                 if lista:
                     self.txtNomeMoeda.SetValue(lista[1])
                     self.txtValorMoeda.SetValue(formata_numero(lista[0]))
@@ -246,7 +245,7 @@ class FrmDespesa(FrameMG):
             self.txtValorMoeda.SetValue('')
 
     def setTipoDespesa(self, idTipoDespesa):
-        lista = Despesas.buscaTipoPorId(idTipoDespesa)
+        lista = Despesas.mc_busca_tipo_por_id(idTipoDespesa)
         if lista:
             self.cbTipoDespesa.SetSelection(self.indiceCb(self.cbTipoDespesa, lista[1]))
             self.tipoDespesaSelecionada(None)
@@ -254,14 +253,14 @@ class FrmDespesa(FrameMG):
     def tipoDespesaSelecionada(self, event):
         nomeTipoDespesa = self.cbTipoDespesa.GetStringSelection()
         lista = None
-        lista = Despesas.buscaTipoPorNome(nomeTipoDespesa)
-        self.idTipoDespesa = -1
+        lista = Despesas.mc_busca_tipo_por_nome(nomeTipoDespesa)
+        self.id_tipo_despesa = -1
         if lista:
-            self.idTipoDespesa = lista[0]
+            self.id_tipo_despesa = lista[0]
             self.txtDescricao.SetValue(nomeTipoDespesa.title())
 
     def limpaElementos(self):
-        self.despesas.clearDespesas()
+        self.despesas.clear_despesas()
 
         self.txtId.Clear()
         self.txtDescricao.Clear()
@@ -291,7 +290,7 @@ class FrmDespesa(FrameMG):
             self.montaGrid(self.dataInicial)
 
     def montaGrid(self, arg):
-        self.lista = Despesas.buscaPorPeriodo(arg, self.idConta)
+        self.lista = Despesas.mc_busca_por_periodo(arg, self.idConta)
 
         self.grid.ClearGrid()
         if self.grid.GetNumberRows() > 0:
@@ -328,21 +327,20 @@ class FrmDespesa(FrameMG):
         idSelecionado = self.grid.GetCellValue(item, 0)
 
         if idSelecionado.isdigit():
-            self.despesas.populaDespesasById(idSelecionado)
+            self.despesas.popula_despesas_by_id(idSelecionado)
 
-            self.txtId.SetValue(str(self.despesas.getid()))
-            self.txtDescricao.SetValue(self.despesas.getdescricao())
-            self.txtNotaNegociacao.SetValue(self.despesas.getnumeronota())
-            #self.txtDataLancamento.SetValue(self.despesas.getdata_lancamento().strftime('%d/%m/%Y'))
+            self.txtId.SetValue(str(self.despesas.id))
+            self.txtDescricao.SetValue(self.despesas.descricao)
+            self.txtNotaNegociacao.SetValue(self.despesas.numero_nota)
 
-            data_str = self.despesas.getdata_lancamento().strftime('%d/%m/%Y')
+            data_str = self.despesas.data_lancamento.strftime('%d/%m/%Y')
             data_formatada = datetime.strptime(data_str, '%d/%m/%Y').date()
             self.txtDataLancamento.SetValue(data_formatada)
 
 
-            self.txtValor.SetValue(str(self.despesas.getvalor()))
+            self.txtValor.SetValue(str(self.despesas.valor))
 
-            self.setTipoDespesa(self.despesas.idTipoDespesa)
+            self.setTipoDespesa(self.despesas.id_tipo_despesa)
 
             self.txtDescricao.Enable()
             self.txtNotaNegociacao.Enable()
@@ -372,17 +370,16 @@ class FrmDespesa(FrameMG):
             self.txtDataLancamento.SetFocus()
 
     def cancela_operacao(self, event):
-        self.despesas.clearDespesas()
+        self.despesas.clear_despesas()
         self.limpaElementos()
 
     def salva_elemento(self, event):
-        #self.despesas.setdata_lancamento(self.txtDataLancamento.Value)
-        self.despesas.setdata_lancamento(self.txtDataLancamento.GetValue().Format('%d/%m/%Y'))
-        self.despesas.setdescricao(self.txtDescricao.Value)
-        self.despesas.setnumeronota(self.txtNotaNegociacao.Value)
-        self.despesas.setvalor(devolveFloat(str(self.txtValor.Value).replace('.',',')))
-        self.despesas.setidConta(self.idConta)
-        self.despesas.setidTipoDespesa(self.idTipoDespesa)
+        self.despesas.set_data_lancamento(self.txtDataLancamento.GetValue().Format('%d/%m/%Y'))
+        self.despesas.set_descricao(self.txtDescricao.Value)
+        self.despesas.set_numero_nota(self.txtNotaNegociacao.Value)
+        self.despesas.set_valor(devolveFloat(str(self.txtValor.Value).replace('.',',')))
+        self.despesas.set_id_conta(self.idConta)
+        self.despesas.set_id_tipo_despesa(self.id_tipo_despesa)
         if self.insert is True:
             self.despesas.insere()
             self.insert = False
@@ -392,7 +389,7 @@ class FrmDespesa(FrameMG):
         self.limpaElementos()
         self.montaGrid(self.dataInicial)
 
-    def deletaElemento(self, event):
+    def deleta_elemento(self, event):
         prossegueEliminacao = False
         dlg = wx.MessageDialog(None, 'Confirma a eliminação dos dados?',
                                'Prestes a eliminar definitivamente!',

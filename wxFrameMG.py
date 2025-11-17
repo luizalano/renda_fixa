@@ -174,7 +174,7 @@ class FrameMG(wx.Frame):
         self.botaoDelete = wx.BitmapButton(self.painel, id=104, bitmap=self.iconeDelete,
                                            pos=(90 + self.xInicialBotoes, ap - ab - gapy))
         self.botaoDelete.Disable()
-        self.Bind(wx.EVT_BUTTON, self.deletaElemento, self.botaoDelete)
+        self.Bind(wx.EVT_BUTTON, self.deleta_elemento, self.botaoDelete)
 
         self.iconeCancela = wx.Bitmap(self.caminho + 'cancel32.ico')
         lb, ab = self.iconeCancela.GetSize()
@@ -201,7 +201,7 @@ class FrameMG(wx.Frame):
         if self.key_shift is True:
             self.key_shift = False
             if tecla == wx.WXK_DELETE:
-                self.deletaElemento(event)
+                self.deleta_elemento(event)
         if tecla == wx.WXK_SHIFT:
             self.key_shift = True
 
@@ -251,7 +251,7 @@ class FrameMG(wx.Frame):
                 # It's a special key, deal with all the known ones:
                 if keycode == wx.WXK_DELETE:
                     if self.botaoDelete.Enable():
-                        self.deletaElemento(event)
+                        self.deleta_elemento(event)
                 elif keycode == wx.WXK_F2:
                     if self.botaoSalva.Enable():
                         self.salva_elemento(event)
@@ -262,7 +262,7 @@ class FrameMG(wx.Frame):
     def salva_elemento(self, event):
         a = 0
 
-    def deletaElemento(self, event):
+    def deleta_elemento(self, event):
         '''
 
         :param event:

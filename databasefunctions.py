@@ -102,4 +102,17 @@ class ConectaBD():
             result = dlg.ShowModal()
             return None
 
+    @staticmethod
+    def mc_retorna_nome_base():
+        fileSettings = open(".\\settings.cfg", )
+        fonte = json.load(fileSettings)
+
+        usuario = fonte['settings']['database']['user']
+        senha = fonte['settings']['database']['password']
+        banco = fonte['settings']['database']['banco']
+        base = fonte['settings']['database']['base']
+        local = fonte['settings']['database']['url']
+        porta = fonte['settings']['database']['porta']
+
+        return base
 

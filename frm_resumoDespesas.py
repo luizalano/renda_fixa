@@ -2,10 +2,11 @@
 
 import wx
 import wx.grid as gridlib
-import psycopg2
 from datetime import datetime
 from collections import defaultdict
+from databasefunctions import ConectaBD
 from diversos import *
+from despesa import Despesas
 
 class FrmResumoDespesas(wx.Frame):
     def __init__(self, id_conta):
@@ -26,31 +27,18 @@ class FrmResumoDespesas(wx.Frame):
 
         self.carregar_dados()
 
-    def carregar_dados(self):
+    @staticmethod
+    def getConexao():
         try:
-            conn = psycopg2.connect(
-                dbname="b3",
-                user="postgres",
-                password="seriate",
-                host="localhost",
-                port="5432"
-            )
-            cursor = conn.cursor()
+            con = ConectaBD.retornaConexao()
+            return con
+        except Exception as e:
+            print(f"Erro ao conectar com o banco: {e}")
+            return False
 
-            consulta = '''
-                SELECT 
-                    TO_CHAR(d.datalancamento, 'YYYY/MM') AS mes_ano,
-                    t.nomedespesa,
-                    SUM(d.valor) AS total
-                FROM despesas d
-                JOIN tipodespesa t ON d.idtipodespesa = t.id
-                GROUP BY mes_ano, t.nomedespesa
-                ORDER BY mes_ano;
-            '''
-
-            cursor.execute(consulta)
-            resultados = cursor.fetchall()
-
+    def carregar_dados(self):
+        resultados = Despesas.mc_busca_todas_despesas_por_mes()
+        if resultados:
             dados = defaultdict(dict)
             todas_despesas = set()
 
@@ -96,14 +84,6 @@ class FrmResumoDespesas(wx.Frame):
                     total = total + valor
                 self.grid.SetCellValue(linha, ultimaColuna, f"{total:.2f}".replace('.', ','))
                 formatar_celula_grid(self.grid, linha, ultimaColuna, align='direita', font_size=tamanhoFonte)
-
-            cursor.close()
-            conn.close()
-
-
-
-        except Exception as e:
-            wx.MessageBox(f"Erro ao carregar dados: {e}", "Erro", wx.OK | wx.ICON_ERROR)
 
 if __name__ == '__main__':
     app = wx.App()
