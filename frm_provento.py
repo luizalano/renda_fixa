@@ -333,7 +333,7 @@ class FrmProvento(FrameMG):
         self.txtTotalPendente.SetValue(formata_numero(self.total_pendente))
         
         # Saldo bancario
-        saldo_bancario = Conta.getSaldoBancario(self.id_conta)
+        saldo_bancario = Conta.mc_get_saldo_bancario(self.id_conta)
         self.txtSaldoBancario.SetValue(formata_numero(saldo_bancario))
 
     def on_left_click(self, event):

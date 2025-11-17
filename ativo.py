@@ -25,6 +25,7 @@ class Ativo():
 
     def __init__(self):
 
+        self.nome_base = ConectaBD.mc_retorna_nome_base()
         self.defineTamanhos()
 
     @staticmethod
@@ -115,7 +116,7 @@ class Ativo():
             retorno = False
 
         finally:
-            self.conexao.con.commit()
+            self.conexao.commit()
             self.conexao.close()
             return retorno
 
@@ -147,7 +148,7 @@ class Ativo():
             retorno = False
 
         finally:
-            self.conexao.con.commit()
+            self.conexao.commit()
             self.conexao.close()
             return retorno
 
@@ -165,7 +166,7 @@ class Ativo():
             retorno = False
 
         finally:
-            self.conexao.con.commit()
+            self.conexao.commit()
             self.conexao.close()
             return retorno
 
@@ -184,7 +185,7 @@ class Ativo():
             retorno = False
 
         finally:
-            self.conexao.con.commit()
+            self.conexao.commit()
             self.conexao.close()
             return retorno
 
@@ -211,7 +212,7 @@ class Ativo():
             retorno = False
 
         finally:
-            self.conexao.con.commit()
+            self.conexao.commit()
             self.conexao.close()
             return retorno
 
@@ -523,7 +524,6 @@ class Ativo():
     def setsigla(self, arg):
         if arg is None:
             arg = ''
-        arg = arg.title()
         self.sigla = arg[0:self.tamsigla]
 
     def sqlBuscaTamanho(self, coluna):
@@ -531,7 +531,7 @@ class Ativo():
         cursor = self.conexao.cursor()
 
         clausulaSql = "select character_maximum_length from INFORMATION_SCHEMA.COLUMNS "
-        clausulaSql += "where table_catalog = 'b3' and table_name = 'ativo'"
+        clausulaSql += "where table_catalog = '" + self.nome_base + "' and table_name = 'ativo'"
         clausulaSql += "and column_name = '" + coluna + "';"
 
         try:
@@ -666,6 +666,64 @@ class Ativo():
         except Exception as e:
             print(f"Erro ao obter cotação: {e}")
             return 0.0
+    
+    @staticmethod
+    def mc_mudainteresse_do_ativo(sigla, interesse):
+        conexao = Ativo.getConexao()
+        cursor = conexao.cursor()
+        cursor.execute("UPDATE ativo SET interesse = %s WHERE upper(sigla) = upper(%s)", (interesse, sigla))
+        conexao.commit()
+        conexao.close()
+
+    @staticmethod
+    def mc_busca_radar(filter_dy=None, order_by="datacom", filter_interesse=-1, primeiro_dia=None, sigla_bolsa=None):
+        conexao = Ativo.getConexao()
+        clausulaSql = ''
+        lista = None
+        filtro = 0
+
+        if order_by == 'sigla': sqlorderby = 'a.sigla, r.datacom, r.dataprovavel'
+        elif order_by == 'razaosocial': sqlorderby = 'a.razaosocial, r.datacom, r.dataprovavel'
+        elif order_by == 'tipoprov': sqlorderby = 'r.tipoprovento, a.sigla, r.datacom, r.dataprovavel'
+        elif order_by == 'datacom': sqlorderby = 'r.datacom, a.sigla, r.dataprovavel'
+        elif order_by == 'datapgto': sqlorderby = 'r.dataprovavel, a.sigla, r.datacom'
+        elif order_by == 'dy': sqlorderby = 'r.dy desc, r.datacom, r.dataprovavel'
+        else: sqlorderby = 'r.datacom, a.sigla, r.dataprovavel'
+
+        if filter_interesse:
+            filtro=filter_interesse
+        if filter_dy is None:
+            clausulaSql = 'SELECT r.id, a.sigla, a.razaosocial, r.tipoprovento, r.datacom, r.dataprovavel, ' \
+                'r.valorprovento, r.ultimacotacao, r.dy, a.interesse FROM radar r ' \
+                'JOIN ativo as a ON r.idativo = a.id ' \
+                'where a.interesse >= ' + str(filtro) + ' and '\
+                'a.idbolsa = (select id from bolsa where sigla = \'' + sigla_bolsa + '\') and '\
+                'a.interesse >= ' + str(filtro) + ' and ' \
+                'r.datacom >= \'' + str(primeiro_dia) + '\' ' \
+                'order by ' + sqlorderby      # r.datacom, a.sigla, r.dataprovavel'
+        else:
+            clausulaSql = 'SELECT r.id, a.sigla, a.razaosocial, r.tipoprovento, r.datacom, r.dataprovavel, ' \
+                'r.valorprovento, r.ultimacotacao, r.dy, a.interesse FROM radar r ' \
+                'JOIN ativo a ON r.idativo = a.id ' \
+                'where r.datacom >= \'' + str(primeiro_dia) + '\' and ' \
+                'a.idbolsa = (select id from bolsa where sigla = \'' + sigla_bolsa + '\') and '\
+                'a.interesse >= ' + str(filtro) + ' and ' \
+                'r.dy >= ' + str(filter_dy) + ' ' \
+                'order by ' + sqlorderby      #r.datacom, a.sigla, r.dataprovavel'
+
+        try:
+            with conexao.cursor() as cursor:
+                cursor.execute(clausulaSql)
+                lista = cursor.fetchall()
+
+        except  Exception as e:
+            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler lançamentos de Capital', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+        
+        conexao.close()
+        return lista
+
+
 
 def main():
     ativo = Ativo()

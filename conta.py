@@ -191,7 +191,7 @@ class Conta:
             return lista
 
     @staticmethod
-    def getSaldoBancario(conta):
+    def mc_get_saldo_bancario(conta):
         try:
             conexao = ConectaBD.retornaConexao()
         except Exception as e:

@@ -3,8 +3,9 @@ import wx
 import os
 import shutil
 import pandas as pd
-import psycopg2
 from datetime import datetime
+
+from databasefunctions import ConectaBD
 
 class LeRadarB3(wx.Frame):
     def __init__(self, parent=None, title="Importar radar de proventos - B3"):
@@ -14,7 +15,7 @@ class LeRadarB3(wx.Frame):
         vbox = wx.BoxSizer(wx.VERTICAL)
 
         self.btnSelecionar = wx.Button(panel, label="Selecionar arquivo de radar")
-        self.btnSelecionar.Bind(wx.EVT_BUTTON, self.onSelecionarArquivo)
+        self.btnSelecionar.Bind(wx.EVT_BUTTON, self.on_selecionar_arquivo)
         vbox.Add(self.btnSelecionar, flag=wx.EXPAND | wx.ALL, border=10)
 
         self.gauge = wx.Gauge(panel, range=100000, style=wx.GA_HORIZONTAL)
@@ -27,7 +28,7 @@ class LeRadarB3(wx.Frame):
         self.Centre()
         self.Show()
 
-    def onSelecionarArquivo(self, event):
+    def on_selecionar_arquivo(self, event):
         dlg = wx.FileDialog(self, "Escolha o arquivo CSV", 
                             defaultDir=r"C:\\Users\\luiza\\OneDrive\\Documentos\\VidaDeProgramador\\Python\\b3-VS\\b3\\negociosdodia",
                             wildcard="Arquivos XLSX (*.xlsx)|*.xlsx",
@@ -35,11 +36,11 @@ class LeRadarB3(wx.Frame):
 
         if dlg.ShowModal() == wx.ID_OK:
             caminho_arquivo = dlg.GetPath()
-            self.importarArquivo(caminho_arquivo)
+            self.importar_arquivo(caminho_arquivo)
 
         dlg.Destroy()
 
-    def moverArquivo(self, origem):
+    def mover_arquivo(self, origem):
         destino_dir = os.path.join(os.path.dirname(origem), "importados")
         if not os.path.exists(destino_dir):
             os.makedirs(destino_dir)
@@ -51,7 +52,7 @@ class LeRadarB3(wx.Frame):
         wx.MessageBox(f"Arquivo movido", "Fim de processo", wx.OK | wx.ICON_INFORMATION)
 
 
-    def devolveData(self, datain):
+    def devolve_data(self, datain):
         dataout = None
         try:
             dataout = datetime.strptime(datain, "%d/%m/%Y").date()
@@ -65,7 +66,15 @@ class LeRadarB3(wx.Frame):
                     dataout = datetime.strptime(datain, "%d-%m-%Y").date()
         return dataout
     
-    def importarArquivo(self, caminho):
+    def getConexao(self):
+        try:
+            con = ConectaBD.retornaConexao()
+            return con
+        except Exception as e:
+            print(f"Erro ao conectar com o banco: {e}")
+            return False
+
+    def importar_arquivo(self, caminho):
         try:
             df = pd.read_excel(caminho)
 
@@ -73,7 +82,7 @@ class LeRadarB3(wx.Frame):
 
             self.gauge.SetRange(total)
 
-            conn = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
+            conn = self.getConexao() 
             cursor = conn.cursor()
 
             today = datetime.now().date()
@@ -89,22 +98,20 @@ class LeRadarB3(wx.Frame):
                 
                 continua = True
                 # Processar colunas
-                dataprovavel = row['Data de Pagamento']
-                datacom = row['Data COM']
-                tipoprovento = row['Tipo de Evento']
-                valorprovento = str.replace(row['Preço Unitário Bruto'],',', '.')
-                ultimacotacao = str.replace(row['Preço Fechamento'],',', '.')
+                data_provavel = row['Data de Pagamento']
+                data_com = row['Data COM']
+                tipo_provento = row['Tipo de Evento']
+                valor_provento = str.replace(row['Preço Unitário Bruto'],',', '.')
+                ultima_cotacao = str.replace(row['Preço Fechamento'],',', '.')
                 dy = str.replace(row['DY'],',', '.')
 
                 # Separar sigla e razão social
                 produto = row['Produto']
 
-                sigla, razaosocial = produto.split(' - ', 1)
-                #if len(dataprovavel) <= 9: continua = False
-                #if len(datacom) <= 9: continua = False
-                if len(tipoprovento) <= 0: continua = False
-                if len(valorprovento) <= 0: continua = False
-                if len(ultimacotacao) <= 0: continua = False
+                sigla, razao_social = produto.split(' - ', 1)
+                if len(tipo_provento) <= 0: continua = False
+                if len(valor_provento) <= 0: continua = False
+                if len(ultima_cotacao) <= 0: continua = False
                 if len(sigla) <= 0: continua = False
 
                 if continua:
@@ -121,7 +128,7 @@ class LeRadarB3(wx.Frame):
                             # Inserir novo ativo
                             cursor.execute(
                                 "INSERT INTO ativo (sigla, razaosocial, idbolsa) VALUES (%s, %s, %s) RETURNING id",
-                                (str.upper(sigla), razaosocial, 1)
+                                (str.upper(sigla), razao_social, 1)
                             )
                             idativo = cursor.fetchone()[0]
                             #conn.commit()
@@ -132,7 +139,7 @@ class LeRadarB3(wx.Frame):
                             INSERT INTO radar (dataprovavel, idativo, tipoprovento, valorprovento, ultimacotacao, dy, datacom, idbolsa)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                             """,
-                            (dataprovavel, idativo, tipoprovento, valorprovento, ultimacotacao, dy, datacom, 1)
+                            (data_provavel, idativo, tipo_provento, valor_provento, ultima_cotacao, dy, data_com, 1)
                         )
                     except Exception as e:
                         print(f"Erro ao processar {sigla}: {e}")
@@ -145,14 +152,14 @@ class LeRadarB3(wx.Frame):
             cursor.close()
             conn.close()
 
-            self.moverArquivo(caminho)
+            self.mover_arquivo(caminho)
 
             wx.MessageBox("Importação concluída com sucesso!", "Sucesso", wx.OK | wx.ICON_INFORMATION)
 
         except Exception as e:
             wx.MessageBox(f"Erro durante a importação: {e}", "Erro", wx.OK | wx.ICON_ERROR)
 
-    def moverArquivo(self, origem):
+    def mover_arquivo(self, origem):
         destino_dir = os.path.join(os.path.dirname(origem), "importados")
         if not os.path.exists(destino_dir):
             os.makedirs(destino_dir)

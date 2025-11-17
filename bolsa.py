@@ -139,20 +139,22 @@ class Bolsa:
             return None
 
     @staticmethod
-    def selectAll():
+    def mc_select_all():
+        lista = None
+        conexao = ConectaBD.retornaConexao()
+
         try:
-            conexao = ConectaBD.retornaConexao()
+            cursor = conexao.cursor()
+            clausulaSql = "SELECT id, sigla, nomebolsa, nomeindice, idmoeda " \
+                        "FROM bolsa order by nomebolsa"
+            cursor.execute(clausulaSql)
+            lista = cursor.fetchall()
         except Exception as e:
             print(f"Erro ao conectar com o banco: {e}")
-            return False
-        cursor = conexao.cursor()
-        #with self.conexao.cursor as cursor:
-        clausulaSql = "SELECTid, sigla, nomebolsa, nomeindice, idmoeda " \
-                      "FROM blsa order by nomeBolsa"
-        cursor.execute(clausulaSql)
-        lista = cursor.fetchall()
-        if lista:
+        finally:
+            conexao.close()
             return lista
+            
 
 
 def main():

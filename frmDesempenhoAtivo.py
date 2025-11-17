@@ -1,10 +1,10 @@
 # coding: utf-8
 #from wx import Button, ID_ANY
-from radarFrm import *
+from frm_radar import *
 from frmRendaTotal import *
-from variacaoFrm import *
+from frm_variacao import *
 from frm_capital import *
-from carteiraFrm import *
+from frm_carteira import *
 from cotacao import *
 #import pandas as pd
 from ativo import Ativo
@@ -19,8 +19,8 @@ from AwesomeCotacao import AwesomeCotacao
 from selecionaBolsa import SelecionaBolsaDialog
 from frm_provento import FrmProvento
 #from programasSimples.ImportaRadar import *
-from leRadarB3 import *
-from negociadoNoDiaFrm import *
+from frm_leRadarB3 import *
+from frm_negociadoNoDia import *
 import psycopg2
 import wx
 

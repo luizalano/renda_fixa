@@ -309,7 +309,7 @@ class FrmDespesa(FrameMG):
                 self.grid.SetCellAlignment(linha, 3, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
         
         # Saldo bancario
-        saldoBancario = Conta.getSaldoBancario(self.idConta)
+        saldoBancario = Conta.mc_get_saldo_bancario(self.idConta)
         self.txtSaldoBancario.SetValue(formata_numero(saldoBancario))
 
 

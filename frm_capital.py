@@ -241,7 +241,7 @@ class FrmCapital(FrameMG):
         self.txtTotalRetirada.SetValue(formata_numero(self.totalRetirada))
 
         # Saldo bancario
-        saldoBancario = Conta.getSaldoBancario(self.idConta)
+        saldoBancario = Conta.mc_get_saldo_bancario(self.idConta)
         self.txtSaldoBancario.SetValue(formata_numero(saldoBancario))
 
     def on_left_click(self, event):

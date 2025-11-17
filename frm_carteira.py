@@ -5,36 +5,30 @@ from ativo import *
 from cotacao import Cotacao
 from conta import Conta
 from wxFrameMG import FrameMG
-import psycopg2
-#from ClienteDeQuem import ClienteDeQuem
 
 from wx import *
-
-#import wx
-#import wx.grid
-#import wx.Button
 
 class FrmCarteira(FrameMG):
     insert = False
     caminho = '.\\icones\\'
-    idConta = -1
-    siglaBolsa = None
+    id_conta = -1
+    sigla_bolsa = None
 
 
     def __init__(self, idContaInicial, siglaBolsa):
-        self.listaNegociacoes = []
-        self.listaAtivos = []
-        self.listaPatrimonio = []
+        self.lista_negociacoes = []
+        self.lista_ativos = []
+        self.lista_patrimonio = []
 
-        self.totalComprado = 0.0
-        self.siglaBolsa = siglaBolsa
+        self.total_comprado = 0.0
+        self.sigla_bolsa = siglaBolsa
 
         super(FrmCarteira, self).__init__(pai=None, titulo='Ativos em carteira',
                                        lar = 1100, alt = 730,
                                        xibot = 150, split=False)
 
         self.criaComponentes()
-        self.setConta(idContaInicial)
+        self.set_conta(idContaInicial)
 
     def criaComponentes(self):
         X = self.posx(3)
@@ -45,7 +39,7 @@ class FrmCarteira(FrameMG):
         self.setAvancoVertical(8)
 
         label0811, self.cbConta = self.criaCombobox(self.painel, pos=(3, 0), tamanho=22, label='Conta')
-        self.cbConta.Bind(wx.EVT_COMBOBOX, self.contaSelecionada)
+        self.cbConta.Bind(wx.EVT_COMBOBOX, self.conta_selecionada)
 
         label0991, self.cbBolsa = self.criaCombobox(self.painel, pos=(30, 0), tamanho=22, label='Bolsa')
         self.cbBolsa.Bind(wx.EVT_COMBOBOX, self.bolsaSelecionada)
@@ -53,7 +47,7 @@ class FrmCarteira(FrameMG):
         self.btnBuscaaAtivos = Button(self.painel, id=ID_ANY, label="Busca Ativos"
                                       , pos=(self.posx(60), self.posy(0)+15),
                                       size=(self.posx(15), self.posy(1)-30), style=0)  
-        self.Bind(wx.EVT_BUTTON, self.buscaTudo, self.btnBuscaaAtivos)
+        self.Bind(wx.EVT_BUTTON, self.busca_tudo, self.btnBuscaaAtivos)
 
 
         label10555, self.txtNomeMoeda = self.criaCaixaDeTexto(self.painel, pos=(X + 65, 0),
@@ -109,18 +103,19 @@ class FrmCarteira(FrameMG):
         self.botaoNovo.Hide()
         self.botaoCancela.Hide()
 
-        self.encheComboContas()
-        self.encheComboBolsas()
+        self.enche_combo_contas()
+        self.enche_combo_bolsas()
 
         self.Show()
 
-    def encheComboContas(self):
+    def enche_combo_contas(self):
         lista = Conta.mc_select_all()
         self.cbConta.Clear()
         for row in lista:
             self.cbConta.Append(row[4])
 
-    def encheComboBolsas(self):
+    def enche_combo_bolsas(self):
+        self.conexao = FrmCarteira.getConexao()
         cursor = self.conexao.cursor()
 
         lista = None
@@ -130,13 +125,14 @@ class FrmCarteira(FrameMG):
         except  Exception as e:
             dlg = wx.MessageDialog(None, str(e), 'Erro ao ler ativos negociados', wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
-
+        self.conexao.close()
+         
         self.cbBolsa.Clear()
         for row in lista:
             self.cbBolsa.Append(row[0])
 
-        if self.siglaBolsa:
-            self.cbBolsa.SetSelection(self.indiceCb(self.cbBolsa, self.siglaBolsa))
+        if self.sigla_bolsa:
+            self.cbBolsa.SetSelection(self.indiceCb(self.cbBolsa, self.sigla_bolsa))
 
     def indiceCb(self, cb, chave):
         indice = 0
@@ -151,19 +147,19 @@ class FrmCarteira(FrameMG):
 
         return indice
 
-    def setConta(self, idConta):
-        lista = Conta.selectOneById(idConta)
+    def set_conta(self, idConta):
+        lista = Conta.mc_select_one_by_id(idConta)
         if lista:
             self.cbConta.SetSelection(self.indiceCb(self.cbConta, lista[4]))
-            self.contaSelecionada(None)
+            self.conta_selecionada(None)
 
-    def contaSelecionada(self, event):
+    def conta_selecionada(self, event):
         nomeConta = self.cbConta.GetStringSelection()
         listaConta = None
-        listaConta = Conta.selectOneByNome(nomeConta)
-        self.idConta = -1
+        listaConta = Conta.mc_select_one_by_nome(nomeConta)
+        self.id_conta = -1
         if listaConta:
-            self.idConta = listaConta[0]
+            self.id_conta = listaConta[0]
             if listaConta[8] == 'REAL':
                 self.txtNomeMoeda.SetValue(listaConta[8])
                 self.txtValorMoeda.SetValue('')
@@ -175,61 +171,66 @@ class FrmCarteira(FrameMG):
                 else:
                     self.txtNomeMoeda.SetValue('')
                     self.txtValorMoeda.SetValue('')
-            #self.buscaTudo()
         else:
             self.txtNomeMoeda.SetValue('')
             self.txtValorMoeda.SetValue('')
 
-    def buscaTudo(self, event):
-        if self.siglaBolsa and self.idConta > -1:        
-            self.getConexao()
-            self.buscaListaAtivos()
-            self.buscaRendaPorAtivo()
-            self.montaGrid()
+    def busca_tudo(self, event):
+        if self.sigla_bolsa and self.id_conta > -1:        
+            self.conexao = FrmCarteira.getConexao()
+            self.busca_lista_ativos()
+            self.busca_renda_por_ativo()
+            self.monta_grid()
+            self.conexao.close()   
                   
     def bolsaSelecionada(self, event):
-        self.siglaBolsa = self.cbBolsa.GetStringSelection()
+        self.sigla_bolsa = self.cbBolsa.GetStringSelection()
         #self.buscaTudo()
 
-    def getConexao(self):
-        self.conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost",
-                                            port="5432")
-    def buscaListaAtivos(self):
+    @staticmethod
+    def getConexao():
+        try:
+            con = ConectaBD.retornaConexao()
+            return con
+        except Exception as e:
+            print(f"Erro ao conectar com o banco: {e}")
+            return False
+        
+    def busca_lista_ativos(self):
         clausulaSql = 'select distinct idativo from ativonegociado where idconta = %s;'
 
         cursor = self.conexao.cursor()
         try:
-            cursor.execute(clausulaSql, (self.idConta,))
+            cursor.execute(clausulaSql, (self.id_conta,))
         except  Exception as e:
             dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao buscar ativos negociados', wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
 
-        self.listaAtivos = cursor.fetchall()
+        self.lista_ativos = cursor.fetchall()
 
-    def buscaRendaPorAtivo(self):
-        self.listaPatrimonio.clear()
+    def busca_renda_por_ativo(self):
+        self.lista_patrimonio.clear()
 
-        self.totalComprado = 0.0
-        self.totalCompras = 0.0
-        self.totalVendas = 0.0
-        for row in self.listaAtivos:
-            self.buscaNegociacoes(row[0])
+        self.total_comprado = 0.0
+        self.total_compras = 0.0
+        self.total_vendas = 0.0
+        for row in self.lista_ativos:
+            self.busca_negociacoes(row[0])
 
-            comprado, quantidade, precoMedio = self.estabeleceRendimentoPorAcoes()
+            comprado, quantidade, precoMedio = self.estabelece_rendimento_por_acoes()
             if comprado > 0:
-                self.totalComprado += comprado
-                self.listaPatrimonio.append([row[0], comprado, quantidade, precoMedio])
+                self.total_comprado += comprado
+                self.lista_patrimonio.append([row[0], comprado, quantidade, precoMedio])
 
         a = 0
-        #lista1.extend(lista2)
 
-    def buscaNegociacoes(self, arg):
-        self.listaNegociacoes.clear()
+    def busca_negociacoes(self, arg):
+        self.lista_negociacoes.clear()
         cursor = self.conexao.cursor()
 
         clausulaSql = 'select a.id, a.dataoperacao, a.operacao, a.qtdeoperacao, a.valoroperacao  ' \
                   'from ativonegociado as a ' \
-                  'where a.idativo = ' + str(arg) +  ' and a.idconta = ' + str(self.idConta) + ' '\
+                  'where a.idativo = ' + str(arg) +  ' and a.idconta = ' + str(self.id_conta) + ' '\
                   'order by a.dataoperacao, a.ordemdia, a.id;'
 
         try:
@@ -238,13 +239,13 @@ class FrmCarteira(FrameMG):
             dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler ativos negociados', wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
 
-        self.listaNegociacoes = cursor.fetchall()
+        self.lista_negociacoes = cursor.fetchall()
 
-    def estabeleceRendimentoPorAcoes(self):
+    def estabelece_rendimento_por_acoes(self):
         saldoQtde = 0
         precomedio = 0.0
         listaProvisoria = []
-        for row in self.listaNegociacoes:
+        for row in self.lista_negociacoes:
             dataOperacao = row[1]
             numoperacao = devolveInteger(row[2])
             valorOperacao = devolveFloat(row[4])
@@ -265,15 +266,14 @@ class FrmCarteira(FrameMG):
         comprado = saldoQtde * precomedio
         return comprado, saldoQtde, precomedio
 
-    def montaGrid(self):
-        #listaOrdenada = sorted(self.listaGeral, key=lambda x: x[0])
+    def monta_grid(self):
         cursor = self.conexao.cursor()
-        totalValorAtual = 0.0
+        total_valor_atual = 0.0
         self.grid.ClearGrid()
         if self.grid.GetNumberRows() > 0:
             self.grid.DeleteRows(0, self.grid.GetNumberRows())
         linha = (-1)
-        for row in self.listaPatrimonio:
+        for row in self.lista_patrimonio:
 
             linha += 1
             self.grid.AppendRows()
@@ -284,18 +284,18 @@ class FrmCarteira(FrameMG):
             result = cursor.fetchone()
 
             cotacao = Ativo.get_ultima_cotacao(result[0])
-            valorAtual = cotacao * float(row[2])
-            totalValorAtual += valorAtual
-            valorMercado = Ativo.get_valor_mercado_yfinance(result[0], self.siglaBolsa)
-            variacao = (valorAtual / float(row[1]) - 1) * 100.0
+            valor_atual = cotacao * float(row[2])
+            total_valor_atual += valor_atual
+            valor_mercado = Ativo.get_valor_mercado_yfinance(result[0], self.sigla_bolsa)
+            variacao = (valor_atual / float(row[1]) - 1) * 100.0
             self.grid.SetCellValue(linha, 0, str(result[0]))
             self.grid.SetCellValue(linha, 1, formata_numero(float(row[1])))
             self.grid.SetCellValue(linha, 2, str(row[2]))
             self.grid.SetCellValue(linha, 3, formata_numero(float(row[3])))
             self.grid.SetCellValue(linha, 4, formata_numero(Ativo.get_ultima_cotacao(result[0])))
-            self.grid.SetCellValue(linha, 5, formata_numero(valorAtual))
+            self.grid.SetCellValue(linha, 5, formata_numero(valor_atual))
             self.grid.SetCellValue(linha, 6, formata_numero(variacao))
-            self.grid.SetCellValue(linha, 7, formatar_valor(valorMercado))
+            self.grid.SetCellValue(linha, 7, formatar_valor(valor_mercado))
 
             self.grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             self.grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
@@ -307,15 +307,14 @@ class FrmCarteira(FrameMG):
             self.grid.SetCellAlignment(linha,  7, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
 
             if variacao < 0: self.grid.SetCellTextColour(linha, 6, wx.RED)
-            #self.text_ctrl.SetBackgroundColour(wx.Colour(255, 255, 0))
 
             if linha % 2 != 0:
                 for i in range(0, 13):
                     self.grid.SetCellBackgroundColour(linha, i, wx.Colour(230, 255, 255))
         if linha >=0:
-            variacao = (totalValorAtual / self.totalComprado - 1) * 100.0
-            self.txtComprado.SetValue(formata_numero(self.totalComprado))
-            self.txtPatrimonio.SetValue(formata_numero(totalValorAtual))
+            variacao = (total_valor_atual / self.total_comprado - 1) * 100.0
+            self.txtComprado.SetValue(formata_numero(self.total_comprado))
+            self.txtPatrimonio.SetValue(formata_numero(total_valor_atual))
             self.txtVariacao.SetValue(formata_numero(variacao) + ' %')
             if variacao < 0:
                 self.txtVariacao.SetForegroundColour(wx.RED)
@@ -324,8 +323,8 @@ class FrmCarteira(FrameMG):
                 self.txtVariacao.SetBackgroundColour(wx.Colour(221, 255, 204))
 
         # Saldo bancario
-        saldoBancario = Conta.getSaldoBancario(self.idConta)
-        self.txtSaldoBancario.SetValue(formata_numero(saldoBancario))
+        saldo_bancario = Conta.mc_get_saldo_bancario(self.id_conta)
+        self.txtSaldoBancario.SetValue(formata_numero(saldo_bancario))
 
 
 def main():

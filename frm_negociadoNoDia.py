@@ -1,12 +1,11 @@
 # coding: utf-8
 from wx import Button, ID_ANY
 import pandas as pd
-from Ativo import Ativo
-from Conta import Conta
-from selecionaConta import SelecionaContaDialog
+from ativo import Ativo
+from conta import Conta
+from frm_selecionaConta import SelecionaContaDialog
 from wxFrameMG import FrameMG
 from diversos import *
-from ferramentas import *
 from datetime import date
 from datetime import datetime
 from wx import *
@@ -15,9 +14,9 @@ class FrmNegociadoNoDia(FrameMG):
     insert = False
     caminho = '.\\icones\\'
     contador = 0
-    idconta = -1
+    id_conta = -1
     id = -1
-    nomeConta = ''
+    nome_conta = ''
     lista = []
 
     def __init__(self, **kwargs):
@@ -27,23 +26,22 @@ class FrmNegociadoNoDia(FrameMG):
                                                 alt=720, xibot=1000, split=False)
 
         self.criaComponentes()
-        self.contaBancaria = None
-        self.idOperacao = None
-        self.dataOperacaoInicial = None
+        self.conta_bancaria = None
+        self.id_operacao = None
+        self.data_operacao_inicial = None
         if len(kwargs) > 0:
             if 'contaBancaria' in kwargs:
-                self.contaBancaria = kwargs['contaBancaria']
+                self.conta_bancaria = kwargs['contaBancaria']
             if 'idOperacao' in kwargs:
-                self.idOperacao = kwargs['idOperacao']
+                self.id_operacao = kwargs['idOperacao']
             if 'dataOperacao' in kwargs:
                 #self.dataOperacaoInicial = 
                 data_str = kwargs['dataOperacao']
                 data_formatada = datetime.strptime(data_str, '%d/%m/%Y').date()
                 self.txtDataOperacao.SetValue(data_formatada)
 
-
-        if self.contaBancaria and self.idOperacao:
-            self.iniciaValores()
+        if self.conta_bancaria and self.id_operacao:
+            self.inicia_valores()
 
     def criaComponentes(self):
         X = self.posx(1)
@@ -54,7 +52,7 @@ class FrmNegociadoNoDia(FrameMG):
         self.setAvancoVertical(8)
 
         self.grid = wx.grid.Grid(self.painel, pos=(X, Y), size=(tamX, tamY))
-        self.grid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.linhaSelecionada)
+        self.grid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.linha_selecionada)
 
         x0 = 1
 
@@ -62,7 +60,7 @@ class FrmNegociadoNoDia(FrameMG):
         lb, ab = self.iconeConta.GetSize()
         self.botaoConta = wx.BitmapButton(self.painel, id=8572, bitmap=self.iconeConta,
                                           pos=(6, 12))
-        self.Bind(wx.EVT_BUTTON, self.chamaDialogConta, self.botaoConta)
+        self.Bind(wx.EVT_BUTTON, self.chama_dialog_conta, self.botaoConta)
         self.botaoConta.SetToolTip("Seleciona a conta corrente")
 
         label0000, self.txtNomeConta = self.criaCaixaDeTexto(self.painel, pos=(x0 + 5, 0), label='Conta corrente',
@@ -71,11 +69,11 @@ class FrmNegociadoNoDia(FrameMG):
         label0222, self.txtDataOperacao = self.criaCaixaDeTexto(self.painel, pos=(x0 + 29, 0), label='Data operação',
                                                                 tamanho=(10, 1), max=6, multi=False, tipodate=True)
         #self.txtDataOperacao.Bind(wx.adv.EVT_DATE_CHANGED, self.dataSelecionada)
-        self.txtDataOperacao.Bind(wx.EVT_KILL_FOCUS, self.dataSelecionada)
+        self.txtDataOperacao.Bind(wx.EVT_KILL_FOCUS, self.data_selecionada)
 
         label00, self.txtAtivo = self.criaCaixaDeTexto(self.painel, pos=(x0 + 43, 0), label='Ativo', tamanho=(6, 1),
                                                        max=6, multi=False)
-        self.txtAtivo.Bind(wx.EVT_KILL_FOCUS, self.buscaAtivo)
+        self.txtAtivo.Bind(wx.EVT_KILL_FOCUS, self.busca_ativo)
         label0909, self.txtNomeAtivo = self.criaCaixaDeTexto(self.painel, pos=(x0 + 52, 0), label='Nome Ativo',
                                                             tamanho=(20, 1), max=6, multi=False)
 
@@ -100,34 +98,33 @@ class FrmNegociadoNoDia(FrameMG):
         self.botaoCancela.SetPosition((1070, 20))
 
         self.txtNomeAtivo.Disable()
-        self.limpaElementos()
+        self.limpa_elementos()
 
         self.grid.CreateGrid(0, 10)
 
         self.Show()
 
-    def iniciaValores(self):
-        #self.txtDataOperacao.SetValue(self.dataOperacaoInicial)
-        self.idconta = self.contaBancaria
-        lista = Conta.selectOneById(self.idconta)
+    def inicia_valores(self):
+        self.id_conta = self.conta_bancaria
+        lista = Conta.selectOneById(self.id_conta)
         if lista:
-            self.nomeConta = lista[4]
-            self.SetTitle('Ativos Negociados na data - Conta ' + self.nomeConta)
-            self.txtNomeConta.SetValue(self.nomeConta)
+            self.nome_conta = lista[4]
+            self.SetTitle('Ativos Negociados na data - Conta ' + self.nome_conta)
+            self.txtNomeConta.SetValue(self.nome_conta)
 
-            self.dataSelecionada(None)
+            self.data_selecionada(None)
 
-    def chamaDialogConta(self, event):
+    def chama_dialog_conta(self, event):
         dlg = SelecionaContaDialog(None)
         if dlg.ShowModal() == wx.ID_OK and dlg.selected_id:  # Retorna wx.ID_OK ao confirmar
-            self.idconta = dlg.selected_id
-            self.nomeConta = dlg.selected_nome
-            self.SetTitle('Ativos Negociados na data - Conta ' + self.nomeConta)
+            self.id_conta = dlg.selected_id
+            self.nome_conta = dlg.selected_nome
+            self.SetTitle('Ativos Negociados na data - Conta ' + self.nome_conta)
 
-            self.txtNomeConta.SetValue(self.nomeConta)
+            self.txtNomeConta.SetValue(self.nome_conta)
         dlg.Destroy()
 
-    def limpaElementos(self):
+    def limpa_elementos(self):
         self.id = -1
         self.ativo.clearAtivo()
 
@@ -144,7 +141,7 @@ class FrmNegociadoNoDia(FrameMG):
         self.botaoDelete.Disable()
         self.botaoCancela.Disable()
 
-    def buscaAtivo(self, event):
+    def busca_ativo(self, event):
         novo_foco = wx.Window.FindFocus()  # Obtém o próximo elemento que recebeu foco
 
         # Verifica se o novo foco está na lista de componentes que precisam de validação
@@ -155,25 +152,25 @@ class FrmNegociadoNoDia(FrameMG):
                 wx.MessageBox("Ativo não está cadastrado!", "Aviso")
                 self.txtAtivo.SetFocus()
             else:
-                self.txtNomeAtivo.SetValue(self.ativo.getrazao_social())
+                self.txtNomeAtivo.SetValue(self.ativo.razao_social)
 
         event.Skip()
 
-    def dataSelecionada(self, event):
-        if self.idconta >= 0:
+    def data_selecionada(self, event):
+        if self.id_conta >= 0:
             data_selecionada = self.txtDataOperacao.GetValue()
             data_formatada = data_selecionada.Format('%Y-%m-%d')
 
             try:
                 wx.BeginBusyCursor()
-                self.lista = Ativo.devolveLancamentosNaData(data_formatada, self.idconta)
-                self.montaGrid(self.lista)
+                self.lista = Ativo.devolveLancamentosNaData(data_formatada, self.id_conta)
+                self.monta_grid(self.lista)
             finally:
             # Garante que volta ao normal mesmo se der erro
                 if wx.IsBusy():
                     wx.EndBusyCursor()
 
-    def linhaSelecionada(self, event):
+    def linha_selecionada(self, event):
         row = event.GetRow()  # Obtém a linha clicada
         col = event.GetCol()  # Obtém a coluna clicada
 
@@ -203,7 +200,7 @@ class FrmNegociadoNoDia(FrameMG):
 
             self.insert = False
 
-    def montaGrid(self, lista):
+    def monta_grid(self, lista):
         numrows = self.grid.GetNumberRows()
         if numrows > 0:
             self.grid.DeleteRows(pos=0, numRows=self.grid.GetNumberRows())
@@ -235,22 +232,22 @@ class FrmNegociadoNoDia(FrameMG):
         self.contador = 0
 
         for row in self.lista:
-            dataOperacao = devolveDateStr(row[6])
-            numoperacao = devolveInteger(row[10])
+            data_operacao = devolveDateStr(row[6])
+            num_operacao = devolveInteger(row[10])
             operacao = ''
-            valorOperacao = devolveFloat(row[4])
-            qtdeOperacao = devolveInteger(row[5])
-            valorCompraStr = ''
-            valorVendaStr = ''
+            valor_operacao = devolveFloat(row[4])
+            qtd_operacao = devolveInteger(row[5])
+            valor_compra_str = ''
+            valor_venda_str = ''
 
-            if numoperacao == 1:
+            if num_operacao == 1:
                 operacao = 'Compra'
-                valorCompraStr = formata_numero(valorOperacao)
-                totalOperacao = qtdeOperacao * valorOperacao
+                valor_compra_str = formata_numero(valor_operacao)
+                total_operacao = qtd_operacao * valor_operacao
             else:
                 operacao = 'Venda'
-                valorVendaStr = formata_numero(valorOperacao)
-                totalOperacao = valorOperacao * qtdeOperacao
+                valor_venda_str = formata_numero(valor_operacao)
+                total_operacao = valor_operacao * qtd_operacao
 
             cotacao = Ativo.get_ultima_cotacao(row[2])
             if row[11] == True: simulado = 'SIMULADO'
@@ -260,12 +257,12 @@ class FrmNegociadoNoDia(FrameMG):
             self.grid.AppendRows()
             self.grid.SetCellValue(linha, 0, str(row[0]))
             self.grid.SetCellValue(linha, 1, str(row[2]))
-            self.grid.SetCellValue(linha, 2, dataOperacao)
+            self.grid.SetCellValue(linha, 2, data_operacao)
             self.grid.SetCellValue(linha, 3, operacao)
-            self.grid.SetCellValue(linha, 4, str(qtdeOperacao))
-            self.grid.SetCellValue(linha, 5, valorCompraStr)
-            self.grid.SetCellValue(linha, 6, valorVendaStr)
-            self.grid.SetCellValue(linha, 7, formata_numero(totalOperacao))
+            self.grid.SetCellValue(linha, 4, str(qtd_operacao))
+            self.grid.SetCellValue(linha, 5, valor_compra_str)
+            self.grid.SetCellValue(linha, 6, valor_venda_str)
+            self.grid.SetCellValue(linha, 7, formata_numero(total_operacao))
             self.grid.SetCellValue(linha, 8, formata_numero(cotacao))
             self.grid.SetCellValue(linha, 9, simulado)
             self.contador += 1
@@ -280,13 +277,13 @@ class FrmNegociadoNoDia(FrameMG):
             self.grid.SetCellAlignment(linha, 8, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
 
 
-    def strOrNone(self, arg):
+    def str_or_none(self, arg):
         if arg is None:
             return ''
         else:
             return arg
 
-    def insereOperacao(self, item):
+    def insere_operacao(self, item):
         avanca = True
         operacao = 0
         quantidade = 0
@@ -313,13 +310,13 @@ class FrmNegociadoNoDia(FrameMG):
                 simulado = False 
 
         if avanca:
-            if self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.idconta, simulado=simulado) == True:
+            if self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.id_conta, simulado=simulado) == True:
                 self.txtQuantidade.SetValue('')
                 self.txtValor.SetValue('')
-                self.buscaAtivo(item)
+                self.busca_ativo(item)
 
     def habilita_novo(self, event):
-        self.limpaElementos()
+        self.limpa_elementos()
         self.txtAtivo.Enable()
         self.txtValor.Enable()
         self.txtQuantidade.Enable()
@@ -335,7 +332,7 @@ class FrmNegociadoNoDia(FrameMG):
 
     def cancela_operacao(self, event):
         self.ativo.clearAtivo()
-        self.limpaElementos()
+        self.limpa_elementos()
 
     def salva_elemento(self, event):
         avanca = True
@@ -369,12 +366,12 @@ class FrmNegociadoNoDia(FrameMG):
         if avanca:
 
             if self.insert is True:
-                self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.idconta, simulado=simulado)
+                self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.id_conta, simulado=simulado)
                 self.insert = False
             else:
-                self.ativo.updateOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.idconta, self.id, simulado=simulado)
+                self.ativo.updateOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.id_conta, self.id, simulado=simulado)
             self.cancela_operacao(event)
-            self.dataSelecionada(event)
+            self.data_selecionada(event)
 
     def deleta_elemento(self, event):
         prossegueEliminacao = False
@@ -387,7 +384,7 @@ class FrmNegociadoNoDia(FrameMG):
         if prossegueEliminacao:
             self.ativo.deleteOperacao(self.id)
             self.cancela_operacao(event)
-            self.dataSelecionada(event)
+            self.data_selecionada(event)
 
 
 def main():

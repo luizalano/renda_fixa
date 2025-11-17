@@ -2,14 +2,14 @@
 
 from wx import *
 import wx.grid
-import psycopg2
+from ativo import Ativo
 from diversos import *
-
+from bolsa import Bolsa
 from datetime import date
 
 class RadarFrm(wx.Frame):
     hoje = None
-    siglaBolsa = None
+    sigla_bolsa = None
 
     def __init__(self, parent, title):
         super().__init__(parent, title=title, size=(1200, 700))
@@ -32,7 +32,7 @@ class RadarFrm(wx.Frame):
         # Filtro por datacom e dy
         
         self.cbBolsa = wx.ComboBox(panel)
-        self.cbBolsa.Bind(wx.EVT_COMBOBOX, self.bolsaSelecionada)
+        self.cbBolsa.Bind(wx.EVT_COMBOBOX, self.bolsa_selecionada)
 
         filter_box = wx.BoxSizer(wx.HORIZONTAL)
         #self.date_filter = wx.TextCtrl(panel)
@@ -41,13 +41,13 @@ class RadarFrm(wx.Frame):
         filter_btn.Bind(wx.EVT_BUTTON, self.on_filter)
 
         interesse_btn = wx.Button(panel, label="Só de interesse")
-        interesse_btn.Bind(wx.EVT_BUTTON, self.mostraSoInteresse)
+        interesse_btn.Bind(wx.EVT_BUTTON, self.mostra_so_interesse)
 
         neutro_btn = wx.Button(panel, label="Interesse e neutro")
-        neutro_btn.Bind(wx.EVT_BUTTON, self.mostraNeutro)
+        neutro_btn.Bind(wx.EVT_BUTTON, self.mostra_neutro)
 
         tudo_btn = wx.Button(panel, label="Todos os ativos")
-        tudo_btn.Bind(wx.EVT_BUTTON, self.mostraTudo)
+        tudo_btn.Bind(wx.EVT_BUTTON, self.mostra_tudo)
 
         #filter_box.Add(wx.StaticText(panel, label="Filtrar por datacom: "), flag=wx.RIGHT, border=5)
         #filter_box.Add(self.date_filter, proportion=1)
@@ -91,30 +91,17 @@ class RadarFrm(wx.Frame):
         vbox.Add(self.grid, proportion=1, flag=wx.EXPAND | wx.ALL, border=10)
 
         panel.SetSizer(vbox)
-        self.montaComboBolsa()
+        self.monta_combo_bolsa()
 
-    def montaComboBolsa(self):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
-        clausulaSql = 'SELECT sigla FROM bolsa order by sigla;'
-        lista = []
-        try:
-            with conexao.cursor() as cursor:
-                cursor.execute(clausulaSql)
-                lista = cursor.fetchall()
-
-        except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler bolsas', wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
-
-        conexao.close()
-
+    def monta_combo_bolsa(self):
+        lista = Bolsa.mc_select_all()
         self.cbBolsa.Clear()
         for row in lista:
-            self.cbBolsa.Append(row[0])
+            self.cbBolsa.Append(row[1])
 
-    def bolsaSelecionada(self, event):
-        self.siglaBolsa = self.cbBolsa.GetStringSelection()
-        if self.siglaBolsa:
+    def bolsa_selecionada(self, event):
+        self.sigla_bolsa = self.cbBolsa.GetStringSelection()
+        if self.sigla_bolsa:
             self.populate_grid(interesse=self.interesse)
 
     def on_right_click(self, event):
@@ -141,23 +128,6 @@ class RadarFrm(wx.Frame):
         self.grid.ClearSelection()
         menu.Destroy()  # Destrói o menu após uso
 
-    def mudaInteresse(self, ativo, interesse):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost",
-                                   port="5432")
-        clausulaSql = 'update ativo set interesse = %s where sigla = %s;'
-        try:
-            with conexao.cursor() as cursor:
-                cursor.execute(clausulaSql, (interesse, ativo))
-                conexao.commit()
-                filter_dy = devolveFloat(self.dy_filter.GetValue())
-                self.populate_grid(filter_dy=filter_dy, interesse=self.interesse)
-
-        except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao alterar interesse do ativo', wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
-
-        conexao.close()
-
     def on_coluna_clicada(self, event):
         col_idx = event.GetCol()
         nome_coluna = self.grid.GetColLabelValue(col_idx).strip()
@@ -183,100 +153,37 @@ class RadarFrm(wx.Frame):
         ordem = f"{chave}, datacom"
         self.populate_grid(order_by=chave) #ordem)
 
-
     def ativa_interesse(self, row):
         ativo = self.grid.GetCellValue(row, 1)
-        self.mudaInteresse(ativo, 1)
+        Ativo.mc_mudainteresse_do_ativo(ativo, 1)
 
     def ativa_desinteresse(self, row):
         ativo = self.grid.GetCellValue(row, 1)
-        self.mudaInteresse(ativo, -2)
+        Ativo.mc_mudainteresse_do_ativo(ativo, -2)  
 
     def ativa_neutro(self, row):
         ativo = self.grid.GetCellValue(row, 1)
-        self.mudaInteresse(ativo, 0)
+        Ativo.mc_mudainteresse_do_ativo(ativo, 0)
 
-    def mostraSoInteresse(self, event):
+    def mostra_so_interesse(self, event):
         self.interesse = 1
         filter_dy = devolveFloat(self.dy_filter.GetValue())
         self.populate_grid(filter_dy=filter_dy, interesse=self.interesse)
 
-    def mostraNeutro(self, event):
+    def mostra_neutro(self, event):
         self.interesse = -1
         filter_dy = devolveFloat(self.dy_filter.GetValue())
         self.populate_grid(filter_dy=filter_dy, interesse=self.interesse)
 
-    def mostraTudo(self, event):
+    def mostra_tudo(self, event):
         self.interesse = -2
         filter_dy = devolveFloat(self.dy_filter.GetValue())
         self.populate_grid(filter_dy=filter_dy, interesse=self.interesse)
 
-    def connect_to_db(self):
-        try:
-            connection = psycopg2.connect(
-                dbname="b3",
-                user="postgres",
-                password="seriate",
-                host="localhost",
-                port="5432"
-            )
-            return connection
-        except Exception as e:
-            wx.MessageBox(f"Erro ao conectar ao banco de dados: {e}", "Erro", wx.OK | wx.ICON_ERROR)
-            self.Close()
-
-    def fetch_data(self, filter_date=None, filter_dy=None, order_by="datacom", filter_interesse=-1):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost",
-                                   port="5432")
-        clausulaSql = ''
-        lista = []
-        filtro = 0
-
-        if order_by == 'sigla': sqlorderby = 'a.sigla, r.datacom, r.dataprovavel'
-        elif order_by == 'razaosocial': sqlorderby = 'a.razaosocial, r.datacom, r.dataprovavel'
-        elif order_by == 'tipoprov': sqlorderby = 'r.tipoprovento, a.sigla, r.datacom, r.dataprovavel'
-        elif order_by == 'datacom': sqlorderby = 'r.datacom, a.sigla, r.dataprovavel'
-        elif order_by == 'datapgto': sqlorderby = 'r.dataprovavel, a.sigla, r.datacom'
-        elif order_by == 'dy': sqlorderby = 'r.dy desc, r.datacom, r.dataprovavel'
-        else: sqlorderby = 'r.datacom, a.sigla, r.dataprovavel'
-
-        if filter_interesse:
-            filtro=filter_interesse
-        if filter_dy is None:
-            clausulaSql = 'SELECT r.id, a.sigla, a.razaosocial, r.tipoprovento, r.datacom, r.dataprovavel, ' \
-                'r.valorprovento, r.ultimacotacao, r.dy, a.interesse FROM radar r ' \
-                'JOIN ativo as a ON r.idativo = a.id ' \
-                'where a.interesse >= ' + str(filtro) + ' and '\
-                'a.idbolsa >= (select id from bolsa where sigla = \'' + self.siglaBolsa + '\') and '\
-                'a.interesse >= ' + str(filtro) + ' and ' \
-                'r.datacom >= \'' + str(self.primeiro_dia) + '\' ' \
-                'order by ' + sqlorderby      # r.datacom, a.sigla, r.dataprovavel'
-        else:
-            clausulaSql = 'SELECT r.id, a.sigla, a.razaosocial, r.tipoprovento, r.datacom, r.dataprovavel, ' \
-                'r.valorprovento, r.ultimacotacao, r.dy, a.interesse FROM radar r ' \
-                'JOIN ativo a ON r.idativo = a.id ' \
-                'where r.datacom >= \'' + str(self.primeiro_dia) + '\' and ' \
-                'a.idbolsa >= (select id from bolsa where sigla = \'' + self.siglaBolsa + '\') and '\
-                'a.interesse >= ' + str(filtro) + ' and ' \
-                'r.dy >= ' + str(filter_dy) + ' ' \
-                'order by ' + sqlorderby      #r.datacom, a.sigla, r.dataprovavel'
-
-        try:
-            with conexao.cursor() as cursor:
-                cursor.execute(clausulaSql)
-                lista = cursor.fetchall()
-
-        except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler lançamentos de Capital', wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
-
-        conexao.close()
-        return lista
-
-    def populate_grid(self, filter_date=None, filter_dy=None, order_by="datacom", interesse=-1):
-        if self.siglaBolsa:
+    def populate_grid(self, filter_dy=None, order_by="datacom", interesse=-1):
+        if self.sigla_bolsa:
             try:
-                data = self.fetch_data(filter_date, filter_dy, order_by, interesse)
+                data = Ativo.mc_busca_radar(filter_dy, order_by, interesse, self.primeiro_dia, self.sigla_bolsa)
 
                 self.grid.ClearGrid()
                 if self.grid.GetNumberRows() > 0:
@@ -331,7 +238,6 @@ class RadarFrm(wx.Frame):
                 wx.MessageBox(f"Erro ao buscar dados: {e}", "Erro", wx.OK | wx.ICON_ERROR)
 
     def on_filter(self, event):
-        #filter_date = self.date_filter.GetValue()
         filter_dy = devolveFloat(self.dy_filter.GetValue().replace('.',','))
         self.populate_grid(filter_dy=filter_dy, interesse=self.interesse)
 
@@ -340,7 +246,7 @@ class RadarFrm(wx.Frame):
         order_by = ["r.id", "a.sigla", "a.razaosocial", "r.tipoprovento", "r.datacom", "r.dataprovavel", "r.valorprovento", "r.ultimacotacao", "r.dy"][col]
         self.populate_grid(order_by=order_by, interesse=self.interesse)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = wx.App()
     frame = RadarFrm(None, title="Radar de Proventos")
     frame.Show()

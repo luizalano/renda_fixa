@@ -12,7 +12,7 @@ from matplotlib import dates as mdates
 from buscaCotacoesAtivoPorDia import BuscaCotacaoBolsas
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from ativo import *
-from leHistoricoB3 import LeHistoricoB3
+from frm_leHistoricoB3 import LeHistoricoB3
 
 class VariacaoFrm(wx.Frame):
     objetoBusca = BuscaCotacaoBolsas()
@@ -20,10 +20,10 @@ class VariacaoFrm(wx.Frame):
 
     def __init__(self, parent, ativo):
         super().__init__(parent, title="Variação diária de ativos", size=(1400, 720))
-        self.ativoInicial = ativo
-        self.idBolsa = -1
-        self.siglaBolsa = None
-        self.siglaMoeda = None
+        self.ativo_inicial = ativo
+        self.id_bolsa = -1
+        self.sigla_bolsa = None
+        self.sigla_moeda = None
         self.SetPosition((0, 0))
         self.horizontal_line = None
         self.horizontal_text = None
@@ -32,7 +32,7 @@ class VariacaoFrm(wx.Frame):
         self.hoje = date.today()
         self.data_inicio = self.hoje - timedelta(days=30)
         self.mostra = 30
-        self.ativoSelecionado = None
+        self.ativo_selecionado = None
 
         # Crosshair inicializados invisíveis
         self.crosshair_vline = self.ax.axvline(np.nan, color='gray', linestyle='--', linewidth=0.5, visible=False)
@@ -40,8 +40,6 @@ class VariacaoFrm(wx.Frame):
         self.crosshair_text = self.ax.text(0, 0, '', fontsize=8, color='black', backgroundcolor='white', visible=False)
 
         self.canvas.mpl_connect("button_press_event", self.on_mouse_middle_click)
-        
-
 
     def init_ui(self):
         # Painel principal
@@ -55,7 +53,7 @@ class VariacaoFrm(wx.Frame):
         #self.text_ctrl = wx.TextCtrl(top_panel)
 
         self.cbBolsa = wx.ComboBox(top_panel)
-        self.cbBolsa.Bind(wx.EVT_COMBOBOX, self.bolsaSelecionada)
+        self.cbBolsa.Bind(wx.EVT_COMBOBOX, self.bolsa_selecionada)
         self.btnMostraTudo = wx.Button(top_panel, label="Mostra 2 anos")
         self.Bind(wx.EVT_BUTTON, self.mostraTodasCotacoes, self.btnMostraTudo)
         self.btnMostra60 = wx.Button(top_panel, label="Mostra 60 dias")
@@ -115,16 +113,22 @@ class VariacaoFrm(wx.Frame):
         # Define o layout final no painel principal
         panel.SetSizer(vbox)
         #self.busca.realizaBusca()
-        self.montaComboBolsa()
+        self.monta_combo_bolsa()
 
 
-        #self.montaGrid()
-        #if self.ativoInicial:
-        #    self.temAtivoInicial(self.ativoInicial)
         self.Show()
 
-    def montaComboBolsa(self):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
+    def getConexao(self):
+        try:
+            con = ConectaBD.retornaConexao()
+            return con
+        except Exception as e:
+            print(f"Erro ao conectar com o banco: {e}")
+            return False
+
+    def monta_combo_bolsa(self):
+        conexao =self.getConexao()
+
         clausulaSql = 'SELECT sigla FROM bolsa order by sigla;'
         lista = []
         try:
@@ -142,23 +146,23 @@ class VariacaoFrm(wx.Frame):
         for row in lista:
             self.cbBolsa.Append(row[0])
 
-    def bolsaSelecionada(self, event):
-        self.siglaBolsa = self.cbBolsa.GetStringSelection()
-        if self.siglaBolsa:
-            self.montaGrid(self.siglaBolsa)  
-            self.buscaMoedaBolsa()
+    def bolsa_selecionada(self, event):
+        self.sigla_bolsa = self.cbBolsa.GetStringSelection()
+        if self.sigla_bolsa:
+            self.montaGrid(self.sigla_bolsa)  
+            self.busca_moeda_bolsa()
 
-    def buscaMoedaBolsa(self):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
+    def busca_moeda_bolsa(self):
+        conexao = self.getConexao()
         
         clausulaSql = 'select b.idmoeda, m.sigla from bolsa as b join moeda as m on m.id = b.idmoeda where b.sigla = %s;'
         lista = []
-        self.siglaMoeda = None
+        self.sigla_moeda = None
         try:
             with conexao.cursor() as cursor:
-                cursor.execute(clausulaSql, (self.siglaBolsa, ))
+                cursor.execute(clausulaSql, (self.sigla_bolsa, ))
                 lista = cursor.fetchone()
-                self.siglaMoeda =  lista[1]
+                self.sigla_moeda =  lista[1]
 
         except  Exception as e:
             dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler ativos com cotação', wx.OK | wx.ICON_ERROR)
@@ -166,8 +170,8 @@ class VariacaoFrm(wx.Frame):
 
         conexao.close()
 
-    def buscaAtivos(self, siglabolsa):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
+    def busca_ativos(self, siglabolsa):
+        conexao = self.getConexao()
         
         #clausulaSql = 'SELECT sigla FROM ativo where interesse = 1 and idbolsa = (select id from bolsa where sigla = %s) order by sigla;'
         clausulaSql = 'SELECT sigla FROM ativo where interesse >= 0 and idbolsa = (select id from bolsa where sigla = %s) order by sigla;'
@@ -185,8 +189,8 @@ class VariacaoFrm(wx.Frame):
         conexao.close()
         return lista
 
-    def buscaPrineiraDataCotacao(self):
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
+    def busca_prineira_data_cotacao(self):
+        conexao = self.getConexao()
         clausulaSql = 'SELECT min(datacotacao) FROM cotacaoativo;'
 
         lista = []
@@ -202,12 +206,7 @@ class VariacaoFrm(wx.Frame):
         conexao.close()
         return datetime.strptime(str(lista[0]), '%Y-%m-%d').date()
 
-    def salvaCotacao(self, conexao, valor, minimo, maximo, data):
-        datacotacao = data.strftime("%Y-%m-%d")
-        #clausulaSql = 'INSERT INTO cotacaoativo (idativo, datacotacao, preco, maximo, minimo)  VALUES (' \
-        #              '(select id from ativo where sigla = upper(\'' + str(self.ativoSelecionado) + '\')), \'' + datacotacao + '\', '+ str(valor) + ') ' \
-        #              'ON CONFLICT (idativo, datacotacao) DO UPDATE SET preco = EXCLUDED.preco;'
-        
+    def salva_cotacao(self, conexao, valor, minimo, maximo, data):
         clausulaSql = '''
             INSERT INTO cotacaoativo (idativo, datacotacao, preco, maximo, minimo)
             VALUES ((select id from ativo where sigla = upper(%s)), %s, %s, %s, %s)
@@ -219,7 +218,7 @@ class VariacaoFrm(wx.Frame):
 
         with conexao.cursor() as cursor:
             try:
-                cursor.execute(clausulaSql, (self.ativoSelecionado, data, float(valor), float(maximo), float(minimo)))
+                cursor.execute(clausulaSql, (self.ativo_selecionado, data, float(valor), float(maximo), float(minimo)))
             except  Exception as e:
                 print(clausulaSql + ' -> ' + str(e))
 
@@ -233,31 +232,31 @@ class VariacaoFrm(wx.Frame):
             setattr(self, frame_attr, None)  # Define como None
 
 
-    def buscacotacaodoAtivo(self, event):
-        if self.ativoSelecionado is None: return None
+    def busca_cotacao_do_ativo(self, event):
+        if self.ativo_selecionado is None: return None
 
-        primeiraData = self.buscaPrineiraDataCotacao()
-        if primeiraData is None: return None
+        primeira_data = self.busca_prineira_data_cotacao()
+        if primeira_data is None: return None
 
-        sufixo = self.objetoBusca.get_sufixo_bolsa(self.siglaBolsa)
+        sufixo = self.objetoBusca.get_sufixo_bolsa(self.sigla_bolsa)
 
-        conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
+        conexao = self.getConexao()
         valor = 0.0
         while True:
-            if primeiraData.weekday() < 5:  # Não roda nos finais de semana
-                cotacao = self.objetoBusca.get_cotacao_por_data(self.ativoSelecionado, primeiraData, sufixo)
+            if primeira_data.weekday() < 5:  # Não roda nos finais de semana
+                cotacao = self.objetoBusca.get_cotacao_por_data(self.ativo_selecionado, primeira_data, sufixo)
 
                 if cotacao:
                     preco = cotacao["fechamento"]
                     maxima = cotacao["maxima"]
                     minima = cotacao["minima"]
-                    self.salvaCotacao(conexao, preco, minima, maxima, primeiraData)
+                    self.salva_cotacao(conexao, preco, minima, maxima, primeira_data)
 
-            primeiraData = primeiraData + + timedelta(days=1)
-            if primeiraData > self.hoje:
+            primeira_data = primeira_data + + timedelta(days=1)
+            if primeira_data > self.hoje:
                 break
 
-        self.graficoDoAtivo(self.ativoSelecionado)
+        self.graficoDoAtivo(self.ativo_selecionado)
 
     def buscaCotacaoDosAtivos(self, event):
         if self.leHist is None:  # Se não existir, cria uma nova janela
@@ -268,28 +267,28 @@ class VariacaoFrm(wx.Frame):
             self.leHist.Raise()  # Se já existir, apenas traz para frente
         
 
-        self.graficoDoAtivo(self.ativoSelecionado)
+        self.graficoDoAtivo(self.ativo_selecionado)
 
     def mostraTodasCotacoes(self, event):
         self.mostra = 730
-        if self.ativoSelecionado != None:
-            self.graficoDoAtivo(self.ativoSelecionado)
+        if self.ativo_selecionado != None:
+            self.graficoDoAtivo(self.ativo_selecionado)
 
     def mostra60(self, event):
         self.mostra = 60
-        if self.ativoSelecionado != None:
-            self.graficoDoAtivo(self.ativoSelecionado)
+        if self.ativo_selecionado != None:
+            self.graficoDoAtivo(self.ativo_selecionado)
 
     def mostra30(self, event):
         self.mostra = 30
-        if self.ativoSelecionado != None:
-            self.graficoDoAtivo(self.ativoSelecionado)
+        if self.ativo_selecionado != None:
+            self.graficoDoAtivo(self.ativo_selecionado)
 
     def montaGrid(self, siglaBolsa):
         numrows = self.gridAtivos.GetNumberRows()
         if numrows >0:
             self.gridAtivos.DeleteRows(pos=0, numRows=self.gridAtivos.GetNumberRows())
-        lista = self.buscaAtivos(siglaBolsa)
+        lista = self.busca_ativos(siglaBolsa)
         linha = -1
         for row in lista:
             linha += 1
@@ -332,8 +331,8 @@ class VariacaoFrm(wx.Frame):
         self.limpar_linha_horizontal(None)
         row = event.GetRow()  # Obtém o índice da linha clicada
         self.gridAtivos.SelectRow(row)
-        self.ativoSelecionado = self.gridAtivos.GetCellValue(row, 0)  # Obtém o nome do ativo na coluna 0
-        self.graficoDoAtivo(self.ativoSelecionado)
+        self.ativo_selecionado = self.gridAtivos.GetCellValue(row, 0)  # Obtém o nome do ativo na coluna 0
+        self.graficoDoAtivo(self.ativo_selecionado)
 
     def temAtivoInicial(self, ativo):
         conexao = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost",
@@ -446,11 +445,11 @@ class VariacaoFrm(wx.Frame):
             self.ax.set_xticks([listax[i] for i in indices_visiveis])
             plt.setp(self.ax.get_xticklabels(), rotation=45)
 
-        valorMercado = Ativo.get_valor_mercado_yfinance(ativo, self.siglaBolsa)
+        valorMercado = Ativo.get_valor_mercado_yfinance(ativo, self.sigla_bolsa)
         strvalor = formata_numero(valorMercado)
 
         self.ax.set_title(
-            f'Variação do ativo {nomeAtivo}  Valor de mercado {strvalor} em {self.siglaMoeda}\n'
+            f'Variação do ativo {nomeAtivo}  Valor de mercado {strvalor} em {self.sigla_moeda}\n'
             f'Negócios: {strNegocios}  Ações negociadas: {strAcoesNegociadas}  Volume financeiro: {strVolume}'
         )
         self.ax.legend()
