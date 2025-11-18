@@ -318,3 +318,19 @@ class Despesas():
             conn.close()
             return lista
         
+    @staticmethod
+    def mc_busca_despesas_por_conta(idconta):
+        conexao = Despesas.getConexao()
+        cursor = conexao.cursor()
+
+        try:
+            cursor.execute("select datalancamento, valor from despesas where idconta = %s order by datalancamento ;", (idconta,))
+        except  Exception as e:
+            dlg = wx.MessageDialog(None, str(e), 'Erro ao ler despesas!', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+
+        lista =  cursor.fetchall()
+        conexao.close()
+
+        return lista
+

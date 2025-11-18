@@ -103,7 +103,7 @@ class AtivoNegociado():
 
     def buscaProventos(self, idconta, pago):
         self.proventos.clear()
-        self.proventos = Provento.sm_busca_proventos_por_conta_ativo(self.id_ativo, idconta, pago)
+        self.proventos = Provento.mc_busca_proventos_por_conta_ativo(self.id_ativo, idconta, pago)
 
     def buscaTiposDeProventos(self):
         lista = TipoProvento.sm_select_all()
@@ -395,6 +395,52 @@ class AtivoNegociado():
             conexao.close()
             if row: return row[0]
             else: return None
+
+    @staticmethod
+    def mc_devolve_id_ativo_negociado_por_conta(idconta):
+        conexao = AtivoNegociado.getConexao()
+        cursor = conexao.cursor()
+        if idconta > -1:
+            clausulaSql = 'select distinct idativo from ativonegociado where idconta =' \
+                          ' ' + str(idconta) + ';'
+        else:
+            clausulaSql = 'select distinct idativo from ativonegociado;'
+        try:
+            cursor.execute(clausulaSql)
+        except  Exception as e:
+            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao buscar ativos negociados', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+
+        listaAtivos = cursor.fetchall()
+        conexao.close()
+        return listaAtivos
+
+    @staticmethod
+    def mc_devolve_lancamentos_ativo__por_conta(idativo, idconta):
+        conexao = AtivoNegociado.getConexao()
+        cursor = conexao.cursor()
+        if idconta == (-1):
+            clausulaSql = 'select a.id, a.dataoperacao, a.operacao, a.qtdeoperacao, a.valoroperacao  ' \
+                      'from ativonegociado as a ' \
+                      'where a.idativo = ' + str(idativo) +  ' '\
+                      'order by a.dataoperacao, a.ordemdia, a.id;'
+        else:
+            clausulaSql = 'select a.id, a.dataoperacao, a.operacao, a.qtdeoperacao, a.valoroperacao  ' \
+                          'from ativonegociado as a ' \
+                          'where a.idativo = ' + str(idativo) + ' ' \
+                          'and a.idconta = ' + str(idconta) + ' ' \
+                          'order by a.dataoperacao, a.ordemdia, a.id;'
+        try:
+            cursor.execute(clausulaSql)
+        except  Exception as e:
+            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler ativos negociados', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+
+        lan = cursor.fetchall()
+
+        conexao.close()
+
+        return lan
 
 def main():
     ativo = Ativo()

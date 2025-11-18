@@ -100,7 +100,7 @@ class Conta:
         self.set_digito_conta('')
         self.set_id_moeda(-1)
 
-    def selectById(self, arg):
+    def select_by_id(self, arg):
         self.con = self.getConexao()
         cursor = self.con.cursor()
         self.clear()
@@ -120,7 +120,7 @@ class Conta:
             self.set_id_moeda(row[7])
         self.con.close()
 
-    def selectByNomeConta(self, arg):
+    def select_by_nome_conta(self, arg):
         self.con = self.getConexao()
         cursor = self.con.cursor()
         self.clear()
@@ -222,8 +222,9 @@ class Conta:
                 return lista[5]
             else:
                 return None
-
-    def getSaldoBancarioTeorico(conta):
+    
+    @staticmethod
+    def mc_get_saldo_bancario_teorico(conta):
         try:
             conexao = ConectaBD.retornaConexao()
         except Exception as e:
@@ -255,10 +256,36 @@ class Conta:
                 return None
 
         self.con.close()
+    @staticmethod
+    def mc_busca_contas_e_ultimacotacao():
+        # 
+        # Retorna uma lista com:
+        #   id da conta
+        #   nome da conta
+        #   nome da moeda
+        #   valor da última cotação da moeda
+        #
+        try:
+            conexao = ConectaBD.retornaConexao()
+        except Exception as e:
+            print(f"Erro ao conectar com o banco: {e}")
+            return False
+
+        with conexao.cursor() as cursor:
+            clausulaSql = 'SELECT c.id, c.nomeconta, (select upper(m.nomemoeda) from moeda as m where m.id = c.idmoeda), ' \
+                            '(SELECT cot.valorcotacao FROM cotacao as cot join moeda as m on m.id = cot.idmoeda ' \
+                            'WHERE cot.datacotacao = (SELECT MAX(datacotacao) FROM cotacao) and cot.idmoeda = c.idmoeda) ' \
+                            'FROM conta as c ORDER BY nomeconta;'
+            cursor.execute(clausulaSql)
+
+            contas = cursor.fetchall()
+        
+        conexao.close()
+        return contas
 
 def main():
     conta = Conta()
-    conta.selectById(1)
+    conta.select_by_id(1)
     print(conta.nome_conta)
     print(conta.id_moeda)
     print(' ')
@@ -268,7 +295,7 @@ def main():
     print(conta.id_moeda)
     print('Inserindo uma conta nova')
 
-    conta.selectById(-2)
+    conta.select_by_id(-2)
     print(str(conta.id) + ' - ' + conta.nome_conta)
 
     conta.set_nome_conta('Conta Nova')

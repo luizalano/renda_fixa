@@ -1,10 +1,14 @@
 #import wx
 import wx.grid
-#import psycopg2
-#from dataBaseFunctionMG import *
+from ativoNegociado import AtivoNegociado
 from cotacao import *
+from despesa import Despesas
+from conta import Conta
+from capital import Capital
 from diversos import *
-from collections import defaultdict
+#from collections import defaultdict
+
+from provento import Provento
 
 class FrmRendaTotal(wx.Frame):
     def __init__(self):
@@ -103,76 +107,26 @@ class FrmRendaTotal(wx.Frame):
 
         #return grid
 
-    def getConexao(self):
-        fileSettings = open(".\\settings.cfg", )
-        dataSettings = json.load(fileSettings)
-        self.conexao = ConMG(dataSettings)
-        if self.conexao.con is None:
-            sys.exit()
-
     def create_dynamic_tabs(self):
-        """Consulta a tabela conta e cria abas dinamicamente"""
-        try:
-            #connection = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
+        contas = Conta.mc_busca_contas_e_ultimacotacao()
 
-            self.getConexao()
-            #self.conexao.cursor.execute("SELECT c.id, c.nomeconta, (select upper(m.nomemoeda) from moeda as m where m.id = c.idmoeda) FROM conta as c ORDER BY nomeconta;")
-            clausulaSql = 'SELECT c.id, c.nomeconta, (select upper(m.nomemoeda) from moeda as m where m.id = c.idmoeda), ' \
-                            '(SELECT cot.valorcotacao FROM cotacao as cot join moeda as m on m.id = cot.idmoeda ' \
-                            'WHERE cot.datacotacao = (SELECT MAX(datacotacao) FROM cotacao) and cot.idmoeda = c.idmoeda) ' \
-                            'FROM conta as c ORDER BY nomeconta;'
-            self.conexao.cursor.execute(clausulaSql)
+        for id_conta, nomeconta, nomemoeda, cotacaoMoeda in contas:
+            if cotacaoMoeda is None:
+                valor = 1
+            else:
+                valor = cotacaoMoeda
+            self.listaContas.append([id_conta, nomeconta, nomemoeda, valor])
 
-            contas = self.conexao.cursor.fetchall()
+            tab = wx.Panel(self.notebook)
+            self.notebook.AddPage(tab, nomeconta)
 
-            for id_conta, nomeconta, nomemoeda, cotacaoMoeda in contas:
-                if cotacaoMoeda is None:
-                    valor = 1
-                else:
-                    valor = cotacaoMoeda
-                self.listaContas.append([id_conta, nomeconta, nomemoeda, valor])
+            # cria os componentes e retorna o grid
+            grid = self.criaComponentes(tab, nomeconta)
 
-                tab = wx.Panel(self.notebook)
-                self.notebook.AddPage(tab, nomeconta)
-
-                # cria os componentes e retorna o grid
-                grid = self.criaComponentes(tab, nomeconta)
-
-                # adiciona informações extras na aba
-                self.tabs_data[nomeconta]["id"] = id_conta
-                self.tabs_data[nomeconta]["moeda"] = nomemoeda
-                self.tabs_data[nomeconta]["cotacao"] = valor
-
-        except Exception as e:
-            wx.MessageBox(f"Erro ao buscar contas: {e}", "Erro", wx.OK | wx.ICON_ERROR)
-
-    def create_dynamic_tabs_old(self):
-        """Consulta a tabela conta e cria abas dinamicamente"""
-        try:
-            #connection = psycopg2.connect(dbname="b3", user="postgres", password="seriate", host="localhost", port="5432")
-
-            self.getConexao()
-            #self.conexao.cursor.execute("SELECT c.id, c.nomeconta, (select upper(m.nomemoeda) from moeda as m where m.id = c.idmoeda) FROM conta as c ORDER BY nomeconta;")
-            clausulaSql = 'SELECT c.id, c.nomeconta, (select upper(m.nomemoeda) from moeda as m where m.id = c.idmoeda), ' \
-                            '(SELECT cot.valorcotacao FROM cotacao as cot join moeda as m on m.id = cot.idmoeda ' \
-                            'WHERE cot.datacotacao = (SELECT MAX(datacotacao) FROM cotacao) and cot.idmoeda = c.idmoeda) ' \
-                            'FROM conta as c ORDER BY nomeconta;'
-            self.conexao.cursor.execute(clausulaSql)
-
-            contas = self.conexao.cursor.fetchall()
-
-            for id_conta, nomeconta, nomemoeda, cotacaoMoeda in contas:
-                if cotacaoMoeda is None:
-                    valor = 1
-                else:
-                    valor = cotacaoMoeda
-                self.listaContas.append([id_conta, nomeconta, nomemoeda, valor])
-                #self.nome_conta.append(nomeconta)
-                tab = wx.Panel(self.notebook)
-                self.notebook.AddPage(tab, nomeconta)
-                self.criaComponentes(tab, nomeconta)  # Clona os componentes
-        except Exception as e:
-            wx.MessageBox(f"Erro ao buscar contas: {e}", "Erro", wx.OK | wx.ICON_ERROR)
+            # adiciona informações extras na aba
+            self.tabs_data[nomeconta]["id"] = id_conta
+            self.tabs_data[nomeconta]["moeda"] = nomemoeda
+            self.tabs_data[nomeconta]["cotacao"] = valor
 
     def removeTab(self, nome_tab):
         """Remove uma aba do Notebook pelo nome"""
@@ -203,10 +157,8 @@ class FrmRendaTotal(wx.Frame):
         return cotacao
 
     def rendaTotal(self):
-        #self.encheListaCotacao()
-        #self.listaContas.append([id_conta, nomeconta, nomemoeda, valor])
         for row in self.listaContas:
-            self.buscaListaAtivos(row[0])
+            self.listaAtivos = AtivoNegociado.mc_devolve_id_ativo_negociado_por_conta(idconta=row[0])
             if len(self.listaAtivos) == 0:
                 self.removeTab(row[1])
             else:
@@ -219,23 +171,6 @@ class FrmRendaTotal(wx.Frame):
 
         self.consolidaRendimentos()
 
-    def buscaListaAtivos(self, idconta):
-        self.getConexao()
-
-        if idconta > -1:
-            clausulaSql = 'select distinct idativo from ativonegociado where idconta =' \
-                          ' ' + str(idconta) + ';'
-        else:
-            clausulaSql = 'select distinct idativo from ativonegociado;'
-        try:
-            self.conexao.cursor.execute(clausulaSql)
-        except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao buscar ativos negociados', wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
-
-        self.listaAtivos = self.conexao.cursor.fetchall()
-        self.conexao.con.close()
-
     def buscaRendaPorAtivo(self, idconta):
         self.listaRendaAcoes.clear()
         self.listaRendaProventos.clear()
@@ -245,8 +180,8 @@ class FrmRendaTotal(wx.Frame):
         self.totalVendas = 0.0
 
         for row in self.listaAtivos:
-            self.setlan(row[0], idconta)  # row[0] -> idativo
-            self.buscaProventos(row[0], idconta, True)
+            self.lan = AtivoNegociado.mc_devolve_lancamentos_ativo__por_conta(idativo=row[0], idconta=idconta)
+            self.proventos = Provento.mc_busca_proventos_por_conta_ativo(row[0], idconta, True)
             comprado, compras, vendas = self.encheListaRendaAcoes()
             self.encheListaRendaProventos()
             self.totalComprado += comprado
@@ -255,75 +190,6 @@ class FrmRendaTotal(wx.Frame):
             self.totalCompradoReal += comprado * self.cotacaoAtual
             self.totalComprasReal += compras * self.cotacaoAtual
             self.totalVendasReal += vendas * self.cotacaoAtual
-
-
-    def setlan(self, idativo, idconta):
-        self.getConexao()
-        self.lan.clear()
-
-        if idconta == (-1):
-            clausulaSql = 'select a.id, a.dataoperacao, a.operacao, a.qtdeoperacao, a.valoroperacao  ' \
-                      'from ativonegociado as a ' \
-                      'where a.idativo = ' + str(idativo) +  ' '\
-                      'order by a.dataoperacao, a.ordemdia, a.id;'
-        else:
-            clausulaSql = 'select a.id, a.dataoperacao, a.operacao, a.qtdeoperacao, a.valoroperacao  ' \
-                          'from ativonegociado as a ' \
-                          'where a.idativo = ' + str(idativo) + ' ' \
-                          'and a.idconta = ' + str(idconta) + ' ' \
-                          'order by a.dataoperacao, a.ordemdia, a.id;'
-        try:
-            self.conexao.cursor.execute(clausulaSql)
-        except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler ativos negociados', wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
-
-        self.lan = self.conexao.cursor.fetchall()
-
-    def buscaProventos(self, idativo, idconta, pago):
-
-        self.getConexao()
-        if idconta >= 0:
-            if pago:
-                clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
-                              '(p.valorbruto - p.valorir) as "valor", ' \
-                              'tp.nometipoprovento as "provento", p.pago  ' \
-                              'from proventos as p join  tipoprovento as tp on tp.id = p.idtipoprovento ' \
-                              'where p.idativo = ' + str(idativo) + ' and ' \
-                              'p.pago = true and ' \
-                              'p.idconta = ' + str(idconta) + ';'
-            else:
-                clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
-                      '(p.valorbruto - p.valorir) as "valor", ' \
-                      'tp.nometipoprovento as "provento", p.pago  ' \
-                      'from proventos as p join  tipoprovento as tp on tp.id = p.idtipoprovento ' \
-                      'where p.idativo = ' + str(idativo) + ' and ' \
-                      'p.idconta = ' + str(idconta) + ';'
-        else:
-            if pago:
-                clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
-                      '(p.valorbruto - p.valorir) as "valor", ' \
-                      'tp.nometipoprovento as "provento", p.pago  ' \
-                      'from proventos as p join  tipoprovento as tp on tp.id = p.idtipoprovento ' \
-                      'where p.idativo = ' + str(idativo) + ' and ' \
-                      'p.pago = true ;'
-            else:
-                clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
-                      '(p.valorbruto - p.valorir) as "valor", ' \
-                      'tp.nometipoprovento as "provento", p.pago  ' \
-                      'from proventos as p join  tipoprovento as tp on tp.id = p.idtipoprovento ' \
-                      'where p.idativo = ' + str(idativo) + ';'
-
-
-        try:
-            self.conexao.cursor.execute(clausulaSql)
-        except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler proventos!', wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
-
-        self.proventos.clear()
-        self.proventos = self.conexao.cursor.fetchall()
-        self.conexao.con.close()
 
     def getCotacaoTab(self, nomeTab):
         """
@@ -395,27 +261,9 @@ class FrmRendaTotal(wx.Frame):
                 else:
                     self.listaRendaProventos.append([dataOperacao, valorRendimento])
 
-    def leDespesas(self, idconta):
-        self.getConexao()
-
-        clausulaSql = 'select datalancamento, valor from despesas ' \
-                      'where idconta = ' + str(idconta) + ' ' \
-                      'order by datalancamento ;'
-
-        try:
-            self.conexao.cursor.execute(clausulaSql)
-        except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler despesas!', wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
-
-        lista =  self.conexao.cursor.fetchall()
-        self.conexao.con.close()
-
-        return lista
-
     def buscaDespesas(self, idconta):
         self.listaDespesas.clear()
-        lista = self.leDespesas(idconta)
+        lista = Despesas.mc_busca_despesas_por_conta(idconta)
         for row in lista:
             dataOperacao = row[0].strftime("%Y/%m")
             valor = float(int(row[1] * 100.0) / 100.0)# * self.cotacaoAtual
@@ -428,26 +276,9 @@ class FrmRendaTotal(wx.Frame):
                         break
                 else:
                     self.listaDespesas.append([dataOperacao, valor])
-
-    def leCapital(self, idconta):
-        self.getConexao()
-
-        clausulaSql = 'select datalancamento, valor from capital ' \
-                      'where idconta = ' + str(idconta) + ' order by datalancamento;'
-
-        try:
-            self.conexao.cursor.execute(clausulaSql)
-        except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler alterações de Capital!', wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
-
-        lista = self.conexao.cursor.fetchall()
-        self.conexao.con.close()
-
-        return lista
-
+    
     def buscaCapital(self, idconta):
-        lista = self.leCapital(idconta)
+        lista = Capital.mc_busca_capital_por_conta(idconta)
         self.listaCapital.clear()
         self.listaRetirada.clear()
         for row in lista:

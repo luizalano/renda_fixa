@@ -211,19 +211,36 @@ class Provento:
             else: return None
 
     @staticmethod
-    def sm_busca_proventos_por_conta_ativo(idativo, idconta, pago):
+    def mc_busca_proventos_por_conta_ativo(idativo, idconta, pago):
 
         conexao = Provento.getConexao()
         cursor = conexao.cursor()
         if idconta >= 0:
-            clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
+            if pago:
+                clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
+                              '(p.valorbruto - p.valorir) as "valor", ' \
+                              'tp.nometipoprovento as "provento", p.pago  ' \
+                              'from proventos as p join  tipoprovento as tp on tp.id = p.idtipoprovento ' \
+                              'where p.idativo = ' + str(idativo) + ' and ' \
+                              'p.pago = true and ' \
+                              'p.idconta = ' + str(idconta) + ';'
+            else:
+                clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
                       '(p.valorbruto - p.valorir) as "valor", ' \
                       'tp.nometipoprovento as "provento", p.pago  ' \
                       'from proventos as p join  tipoprovento as tp on tp.id = p.idtipoprovento ' \
                       'where p.idativo = ' + str(idativo) + ' and ' \
                       'p.idconta = ' + str(idconta) + ';'
         else:
-            clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
+            if pago:
+                clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
+                      '(p.valorbruto - p.valorir) as "valor", ' \
+                      'tp.nometipoprovento as "provento", p.pago  ' \
+                      'from proventos as p join  tipoprovento as tp on tp.id = p.idtipoprovento ' \
+                      'where p.idativo = ' + str(idativo) + ' and ' \
+                      'p.pago = true ;'
+            else:
+                clausulaSql = 'select p.id, p.datarecebimento as "datar", ' \
                       '(p.valorbruto - p.valorir) as "valor", ' \
                       'tp.nometipoprovento as "provento", p.pago  ' \
                       'from proventos as p join  tipoprovento as tp on tp.id = p.idtipoprovento ' \

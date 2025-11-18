@@ -152,7 +152,7 @@ class Ativo():
             self.conexao.close()
             return retorno
 
-    def efetivaLancamentoiSimulado(self, id):
+    def efetiva_lancamento_simulado(self, id):
         
         retorno = True
         try:

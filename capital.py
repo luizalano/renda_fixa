@@ -198,3 +198,22 @@ class Capital():
         conexao.close()
         return lista
 
+    @staticmethod
+    def mc_busca_capital_por_conta(idconta):
+        conexao = Capital.getConexao()
+        cursor = conexao.cursor()
+
+        clausulaSql = 'select datalancamento, valor from capital ' \
+                      'where idconta = %s order by datalancamento;'
+
+        try:
+            cursor.execute(clausulaSql, (idconta,))
+        except  Exception as e:
+            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler alterações de Capital!', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+
+        lista = cursor.fetchall()
+        conexao.close()
+
+        return lista
+

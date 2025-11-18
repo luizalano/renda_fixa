@@ -1,24 +1,16 @@
 # coding: utf-8
-#from wx import Button, ID_ANY
 from frm_radar import *
-from frmRendaTotal import *
+from frm_rendaTotal import *
 from frm_variacao import *
 from frm_capital import *
 from frm_carteira import *
 from cotacao import *
-#import pandas as pd
 from ativo import Ativo
-#from wxFrameMG import FrameMG
 from diversos import *
-#from ferramentas import *
-#from datetime import date
-#from datetime import datetime
 from frm_despesa import FrmDespesa
 from AwesomeCotacao import AwesomeCotacao
-#from selecionaConta import SelecionaContaDialog
 from selecionaBolsa import SelecionaBolsaDialog
 from frm_provento import FrmProvento
-#from programasSimples.ImportaRadar import *
 from frm_leRadarB3 import *
 from frm_negociadoNoDia import *
 import psycopg2
@@ -66,7 +58,7 @@ class frmDesempenhoAtivo(FrameMG):
         self.saldoBancario = 0.0
         self.SaldoBancarioTeorico = 0.0
 
-        super(frmDesempenhoAtivo, self).__init__(pai=None, titulo='Desempenho de ativo - CONTA NÃO DEFINIDA AINDA', lar = 1370, alt = 720,
+        super(frmDesempenhoAtivo, self).__init__(pai=None, titulo='Renda Fixa - Desempenho de ativo - CONTA NÃO DEFINIDA AINDA', lar = 1370, alt = 720,
                                          xibot = 650, split=False)
 
         self.criaComponentes()
@@ -91,7 +83,7 @@ class frmDesempenhoAtivo(FrameMG):
         lb, ab = self.iconeConta.GetSize()
         self.botaoConta = wx.BitmapButton(self.painel, id=8572, bitmap=self.iconeConta,
                                          pos=(6, 12))
-        self.Bind(wx.EVT_BUTTON, self.chamaDialogConta, self.botaoConta)
+        self.Bind(wx.EVT_BUTTON, self.chama_Dialog_conta, self.botaoConta)
         self.botaoConta.SetToolTip("Seleciona a conta corrente")
 
 
@@ -100,13 +92,13 @@ class frmDesempenhoAtivo(FrameMG):
         self.btnOk = Button(self.painel, id=ID_ANY, label="OK"
                                       , pos=(self.posx(15), self.posy(0)+15),
                                       size=(self.posx(5), self.posy(1)-30), style=0)
-        self.Bind(wx.EVT_BUTTON, self.buscaAtivo, self.btnOk)
+        self.Bind(wx.EVT_BUTTON, self.busca_ativo, self.btnOk)
 
         self.iconeBolsas = wx.Bitmap(self.caminho + 'bolsas-32.png')
         lb, ab = self.iconeBolsas.GetSize()
         self.botaoBolsas = wx.BitmapButton(self.painel, id=ID_ANY, bitmap=self.iconeBolsas,
                                          pos=(self.posx(x0 + 25), 12))
-        self.Bind(wx.EVT_BUTTON, self.chamaDialogBolsas, self.botaoBolsas)
+        self.Bind(wx.EVT_BUTTON, self.chama_Dialog_bolsas, self.botaoBolsas)
         self.botaoBolsas.SetToolTip("Seleciona a bolsa")
 
 
@@ -129,7 +121,7 @@ class frmDesempenhoAtivo(FrameMG):
         self.btnInsereOperacao = Button(self.painel, id=ID_ANY, label="Salva Operação"
                                       , pos=(self.posx(100), self.posy(0)+15),
                                       size=(self.posx(15), self.posy(1)-30), style=0)  
-        self.Bind(wx.EVT_BUTTON, self.insereOperacao, self.btnInsereOperacao)
+        self.Bind(wx.EVT_BUTTON, self.insere_operacao, self.btnInsereOperacao)
 
         #label3444, self.txtValorMercado = self.criaCaixaDeTexto(self.painel, pos=(x0+105, 0), label='Valor de Mercado',
         #                                                    tamanho = (15, 1), max=8, multi=False, align='direita' )
@@ -158,49 +150,49 @@ class frmDesempenhoAtivo(FrameMG):
         lb, ab = self.iconeConta.GetSize()
         self.botaoHoje = wx.BitmapButton(self.painel, id=8571, bitmap=self.iconeHoje,
                                          pos=(1067, 12))
-        self.Bind(wx.EVT_BUTTON, self.chamaNegociadoNoDia, self.botaoHoje)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmnegociadoNoDiaNoDia, self.botaoHoje)
         self.botaoHoje.SetToolTip("Ativos negociados na data")
 
         self.iconeCarteira = wx.Bitmap(self.caminho + 'wallet_32.png')
         lb, ab = self.iconeCarteira.GetSize()
         self.botaoCarteira = wx.BitmapButton(self.painel, id=8472, bitmap=self.iconeCarteira,
                                          pos=(1107, 12))
-        self.Bind(wx.EVT_BUTTON, self.chamaCarteira, self.botaoCarteira)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmcarteira, self.botaoCarteira)
         self.botaoCarteira.SetToolTip("Ações em carteira")
 
         self.iconeProvento = wx.Bitmap(self.caminho + 'money_dollar_cash_coins_32.png')
         lb, ab = self.iconeProvento.GetSize()
         self.botaoProvento = wx.BitmapButton(self.painel, id=8442, bitmap=self.iconeProvento,
                                          pos=(1147, 12))
-        self.Bind(wx.EVT_BUTTON, self.chamaProventos, self.botaoProvento)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmproventos, self.botaoProvento)
         self.botaoProvento.SetToolTip("Proventos recebidos")
 
         self.iconeCapital = wx.Bitmap(self.caminho + 'dinheiro_entra_32.png')
         lb, ab = self.iconeCapital.GetSize()
         self.botaoCapital = wx.BitmapButton(self.painel, id=5572, bitmap=self.iconeCapital,
                                          pos=(1187, 12))
-        self.Bind(wx.EVT_BUTTON, self.chamaCapital, self.botaoCapital)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmcapital, self.botaoCapital)
         self.botaoCapital.SetToolTip("Aumento de Capital ou retiradas")
 
         self.iconeDespesas = wx.Bitmap(self.caminho + 'dinheiro_sai_32.png')
         lb, ab = self.iconeDespesas.GetSize()
         self.botaoDespesas = wx.BitmapButton(self.painel, id=5552, bitmap=self.iconeDespesas,
                                          pos=(1227, 12))
-        self.Bind(wx.EVT_BUTTON, self.chamaDespesas, self.botaoDespesas)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmdespesas, self.botaoDespesas)
         self.botaoDespesas.SetToolTip("Registrar Despesas")
 
         self.iconeImporta = wx.Bitmap(self.caminho + 'importa-32.png')
         lb, ab = self.iconeImporta.GetSize()
         self.botaoImporta = wx.BitmapButton(self.painel, id=2202, bitmap=self.iconeImporta,
                                          pos=(1267, 12))
-        self.Bind(wx.EVT_BUTTON, self.importaRadar, self.botaoImporta)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmleRadarB3, self.botaoImporta)
         self.botaoImporta.SetToolTip("Importa planiha de Radar de Proventos")
 
         self.iconeRadar = wx.Bitmap(self.caminho + 'radar-32.png')
         lb, ab = self.iconeRadar.GetSize()
         self.botaoRadar = wx.BitmapButton(self.painel, id=1202, bitmap=self.iconeRadar,
                                          pos=(1307, 12))
-        self.Bind(wx.EVT_BUTTON, self.chamaRadar, self.botaoRadar)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmradar, self.botaoRadar)
         self.botaoRadar.SetToolTip("Exibe Radar de Proventos")
 
         # wallet_32.png
@@ -236,14 +228,14 @@ class frmDesempenhoAtivo(FrameMG):
         lb, ab = self.iconeVariacao.GetSize()
         self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao,
                                          pos=(1100, 620))
-        self.Bind(wx.EVT_BUTTON, self.chamaVariacao, self.botaoVariacao)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmvariacao, self.botaoVariacao)
         self.botaoVariacao.SetToolTip("Grafico da variação diária de ativos")
 
         self.iconeRenda = wx.Bitmap(self.caminho + 'Rendimento-64.png')
         lb, ab = self.iconeRenda.GetSize()
         self.botaoRenda = wx.BitmapButton(self.painel, id=5202, bitmap=self.iconeRenda,
                                          pos=(1170, 597))
-        self.Bind(wx.EVT_BUTTON, self.chamaRenda, self.botaoRenda)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmrRendaTotal, self.botaoRenda)
         self.botaoRenda.SetToolTip("Mapa de Rendimentos")
 
 
@@ -301,7 +293,7 @@ class frmDesempenhoAtivo(FrameMG):
             if dlg.ShowModal() == wx.ID_YES:
                 id = self.grid.GetCellValue(row, 0)
                 self.ativo.deleteOperacao(id)
-                self.buscaAtivo(1)
+                self.busca_ativo(1)
 
     def efetiva_lancamento(self, row):
         operacao = self.grid.GetCellValue(row, 2)
@@ -314,8 +306,8 @@ class frmDesempenhoAtivo(FrameMG):
                                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
             if dlg.ShowModal() == wx.ID_YES:
                 id = self.grid.GetCellValue(row, 0)
-                self.ativo.efetivaLancamentoiSimulado(id)
-                self.buscaAtivo(1)
+                self.ativo.efetiva_lancamento_simulado(id)
+                self.busca_ativo(1)
 
     def altera_lancamento(self, row):
         contaBancaria = self.idConta
@@ -323,39 +315,21 @@ class frmDesempenhoAtivo(FrameMG):
         dataOperacao = self.grid.GetCellValue(row, 1)
 
         frmNegociadoNoDia = FrmNegociadoNoDia(contaBancaria = contaBancaria, idOperacao = idOperacao, dataOperacao = dataOperacao)
-        #frmNegociadoNoDia.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmNegociadoNoDia"))
         frmNegociadoNoDia.Show()
 
-        self.buscaAtivo(1)
+        self.busca_ativo(1)
 
-    #def mudaInteresse(self, interesse):
-    #    conexao = psycopg2.connect(dbname=self.dbname, user="postgres", password="seriate", host="localhost",
-    #                               port="5432")
-    #    clausulaSql = 'update ativo set interesse = %s where sigla = upper(%s);'
-    #    ativo = self.txtAtivo.GetValue()
-    #
-    #    try:
-    #        with conexao.cursor() as cursor:
-    #            cursor.execute(clausulaSql, (interesse, ativo))
-    #            conexao.commit()
-    #
-    #    except  Exception as e:
-    #        dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao alterar interesse do ativo', wx.OK | wx.ICON_ERROR)
-    #        result = dlg.ShowModal()
-    #
-    #    conexao.close()
-
-    def chamaDialogBolsas(self, event):
+    def chama_Dialog_bolsas(self, event):
         dlg = SelecionaBolsaDialog(None)
         if dlg.ShowModal() == wx.ID_OK and dlg.selected_id:  # Retorna wx.ID_OK ao confirmar
             self.idBolsa = dlg.selected_id
             self.nomeBolsa = dlg.selected_nome
 
-            self.SetTitle('Desempenho de ativo -  Conta ' + self.nomeConta + ' para ' + self.nomeBolsa)
+            self.SetTitle('Renda Fixa - Desempenho de ativo -  Conta ' + self.nomeConta + ' para ' + self.nomeBolsa)
 
         dlg.Destroy()
 
-    def chamaDialogConta(self, event):
+    def chama_Dialog_conta(self, event):
         dlg = SelecionaContaDialog(None)
         if dlg.ShowModal() == wx.ID_OK and dlg.selected_id:  # Retorna wx.ID_OK ao confirmar
             self.idconta = dlg.selected_id
@@ -364,9 +338,9 @@ class frmDesempenhoAtivo(FrameMG):
             listaConta = Conta.selectOneById(self.idconta)
             if listaConta:
                 if self.nomeBolsa:
-                    self.SetTitle('Desempenho de ativo -  Conta ' + self.nomeConta + ' para ' + self.nomeBolsa)
+                    self.SetTitle('Renda Fixa - Desempenho de ativo -  Conta ' + self.nomeConta + ' para ' + self.nomeBolsa)
                 else:
-                    self.SetTitle('Desempenho de ativo -  Conta ' + self.nomeConta)
+                    self.SetTitle('Renda Fixa - Desempenho de ativo -  Conta ' + self.nomeConta)
 
                 self.idConta = listaConta[0]
                 if listaConta[8] == 'REAL':
@@ -388,7 +362,7 @@ class frmDesempenhoAtivo(FrameMG):
 
         dlg.Destroy()
 
-    def chamaVariacao(self, evento):
+    def chama_frmvariacao(self, evento):
         ativo = self.txtAtivo.GetValue()
         if self.frmVariacao is None:  # Se não existir, cria uma nova janela
             self.frmVariacao = VariacaoFrm(None, ativo)
@@ -399,7 +373,7 @@ class frmDesempenhoAtivo(FrameMG):
                 self.frmVariacao.temAtivoInicial(ativo)
             self.frmVariacao.Raise()  # Se já existir, apenas traz para frente
 
-    def chamaNegociadoNoDia(self, evento):
+    def chama_frmnegociadoNoDiaNoDia(self, evento):
         if self.frmNegociadoNoDia is None:  # Se não existir, cria uma nova janela
             self.frmNegociadoNoDia = FrmNegociadoNoDia()
             self.frmNegociadoNoDia.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmNegociadoNoDia"))
@@ -407,7 +381,7 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             self.frmNegociadoNoDia.Raise()  # Se já existir, apenas traz para frente
 
-    def chamaRenda(self, evento):
+    def chama_frmrRendaTotal(self, evento):
 
         if self.frmRendaTotal is None:  # Se não existir, cria uma nova janela
             self.frmRendaTotal = FrmRendaTotal()
@@ -416,7 +390,7 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             self.frmRendaTotal.Raise()  # Se já existir, apenas traz para frente
 
-    def chamaCarteira(self, evento):
+    def chama_frmcarteira(self, evento):
 
         if self.frmCarteira is None:  # Se não existir, cria uma nova janela
             self.frmCarteira = FrmCarteira(self.idconta, self.nomeBolsa)
@@ -425,7 +399,7 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             self.frmCarteira.Raise()  # Se já existir, apenas traz para frente
 
-    def chamaProventos(self, evento):
+    def chama_frmproventos(self, evento):
 
         if self.frmProvento is None:  # Se não existir, cria uma nova janela
             self.frmProvento = FrmProvento(self.idconta)
@@ -446,7 +420,7 @@ class frmDesempenhoAtivo(FrameMG):
             frame.Destroy()  # Destrói a janela
             setattr(self, frame_attr, None)  # Define como None
 
-    def chamaDespesas(self, evento):
+    def chama_frmdespesas(self, evento):
 
         if self.frmDespesa is None:  # Se não existir, cria uma nova janela
             self.frmDespesa = FrmDespesa(self.idconta)
@@ -455,7 +429,7 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             self.frmDespesa.Raise()  # Se já existir, apenas traz para frente
 
-    def chamaCapital(self, evento):
+    def chama_frmcapital(self, evento):
         self.awsomeCotacao.busca_dollar()
         self.awsomeCotacao.busca_euro()
 
@@ -466,7 +440,7 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             self.frmCapital.Raise()  # Se já existir, apenas traz para frente
 
-    def chamaRadar(self, evento):
+    def chama_frmradar(self, evento):
         self.awsomeCotacao.busca_dollar()
         self.awsomeCotacao.busca_euro()
 
@@ -477,7 +451,7 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             self.frmRadar.Raise()  # Se já existir, apenas traz para frente
 
-    def importaRadar(self, evento):
+    def chama_frmleRadarB3(self, evento):
         if self.leRadarB3 is None:  # Se não existir, cria uma nova janela
             self.leRadarB3 = LeRadarB3()
             self.leRadarB3.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "leRadarB3"))
@@ -485,19 +459,12 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             self.leRadarB3.Raise()  # Se já existir, apenas traz para frente
 
-        #importaRadarBolsas(1)
-        #dlg = wx.MessageDialog(None, 'Tudo certo', 'Radar B3 importado!', wx.OK | wx.ICON_INFORMATION)
-        #result = dlg.ShowModal()
-
     def limpaElementos(self):
 
         self.ativo.clearAtivo()
-
         self.txtAtivo.Clear()
 
     def montaGrid(self, lista):
-        #self.grid.CreateGrid(0, 14)
-        #self.grid.ClearGrid()
         numrows = self.grid.GetNumberRows()
         if numrows >0:
             self.grid.DeleteRows(pos=0, numRows=self.grid.GetNumberRows())
@@ -764,21 +731,17 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             return arg
 
-    def buscaAtivo(self, item):
+    def busca_ativo(self, item):
         siglaAtivo = self.txtAtivo.Value
         
         if len(siglaAtivo) > 0:
             self.ativo.populaAtivoBySigla(siglaAtivo) #, self.idconta)
 
             if self.ativo.getid_ativo() > 0:
-                #valorMercado = Ativo.get_valor_mercado_yfinance(siglaAtivo, self.nomeBolsa)
-                #self.txtValorMercado.SetValue(formata_numero(valorMercado))
                 self.ativo.setlan(self.idconta)
                 self.ativo.buscaProventos(self.idconta, False)
-                #self.listaSaldoBancario = self.selectSaldoBancario()
-                self.saldoBancario = Conta.getSaldoBancario(self.idconta)
-                self.saldoBancarioTeorico = Conta.getSaldoBancarioTeorico(self.idconta)
-                #self.ativo.buscaProventos()
+                self.saldoBancario = Conta.mc_get_saldo_bancario(self.idconta)
+                self.saldoBancarioTeorico = Conta.mc_get_saldo_bancario_teorico(self.idconta)
                 self.montaGrid(self.ativo.lan)
                 self.gridProventos(self.ativo.proventos)
                 self.gridRadar(self.ativo.buscarRadar(siglaAtivo))
@@ -787,36 +750,7 @@ class frmDesempenhoAtivo(FrameMG):
                 dlg = wx.MessageDialog(None, 'Não foi encontrado o ativo indicado!', 'Erro no Ativo!', wx.OK | wx.ICON_ERROR)
                 result = dlg.ShowModal()
 
-
-    def selectSaldoBancario(self):
-        conexao = psycopg2.connect(dbname=self.dbname, user="postgres", password="seriate", host="localhost",
-                                   port="5432")
-        with conexao.cursor() as cursor:
-            clausulaSql = 'WITH valores AS (    ' \
-                          'SELECT ' \
-                             '(SELECT COALESCE(SUM(valorbruto) - SUM(valorir), 0) FROM proventos WHERE pago = TRUE) AS proventos, ' \
-                             '(SELECT COALESCE(SUM(valor), 0) FROM despesas) AS despesas, '\
-                             '(SELECT COALESCE(SUM(valor), 0) FROM capital) AS aportes '\
-                           '), ' \
-                          'transacoes AS ( ' \
-                          'SELECT ' \
-                             'COALESCE(SUM(CASE WHEN operacao = 1 THEN valoroperacao * qtdeoperacao ELSE 0 END), 0) AS compras, ' \
-                             'COALESCE(SUM(CASE WHEN operacao = 2 THEN valoroperacao * qtdeoperacao ELSE 0 END), 0) AS vendas ' \
-                          'FROM ativonegociado ' \
-                          ') ' \
-                          'SELECT ' \
-                             ' v.proventos, v.despesas, v.aportes, t.compras, t.vendas, ' \
-                             '(v.proventos - v.despesas + v.aportes - t.compras + t.vendas) AS saldo ' \
-                          'FROM valores v, transacoes t;'
-
-            cursor.execute(clausulaSql)
-            lista = cursor.fetchone()
-            if lista:
-                return lista
-            else:
-                return None
-
-    def insereOperacao(self, item):
+    def insere_operacao(self, item):
         avanca = True
         operacao = 0
         quantidade = 0
@@ -847,7 +781,7 @@ class frmDesempenhoAtivo(FrameMG):
             if self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.idconta, simulado=simulacao) == True:
                 self.txtQuatidade.SetValue('')
                 self.txtValor.SetValue('')
-                self.buscaAtivo(item)
+                self.busca_ativo(item)
 
 
 def main():
