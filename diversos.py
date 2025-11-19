@@ -88,11 +88,14 @@ def devolveDate(arg):
 
     if str(tipo) == "<class 'str'>":
         aux = arg.strip()
-        tam = len(aux)
-        if tam < 10:
-            return None
-        else:
-            return datetime.strptime(arg, "%d/%m/%Y").date()
+        try:
+            return datetime.strptime(aux, '%Y-%m-%d')
+        except  Exception as e:
+            try:
+                return datetime.strptime(aux, '%d-%m-%Y')
+            except  Exception as e:
+                return None
+    
     if str(tipo) == "<class 'datetime.datetime'>" or str(tipo) == "<class 'datetime.date'>":
         return arg
 

@@ -30,7 +30,7 @@ class frmDesempenhoAtivo(FrameMG):
     proventoBruto = 0.0
     proventoIR = 0.0
     contador = 0
-    idconta = -1
+    idConta = -1
     nomeConta = ''
     idBolsa = -1
     nomeBolsa = None
@@ -49,6 +49,9 @@ class frmDesempenhoAtivo(FrameMG):
         self.frmNegociadoNoDia = None
         self.frmVariacao = None
         self.leRadarB3 = None
+
+        self.idBolsa = None
+        self.idConta = None
 
         self.awsomeCotacao = AwesomeCotacao()
         self.awsomeCotacao.busca_dollar()
@@ -238,13 +241,6 @@ class frmDesempenhoAtivo(FrameMG):
         self.Bind(wx.EVT_BUTTON, self.chama_frmrRendaTotal, self.botaoRenda)
         self.botaoRenda.SetToolTip("Mapa de Rendimentos")
 
-
-        self.btnOk.Disable()
-        self.botaoCapital.Disable()
-        self.botaoDespesas.Disable()
-        self.btnInsereOperacao.Disable()
-        #self.btnInsereProvento.Disable()
-
         self.botaoSalva.Hide()
         self.botaoDelete.Hide()
         self.botaoNovo.Hide()
@@ -252,7 +248,6 @@ class frmDesempenhoAtivo(FrameMG):
 
         self.limpaElementos()
 
-        #self.encheComboTipoProventos()
         self.grid.CreateGrid(0, 14)
 
         self.Show()
@@ -332,10 +327,10 @@ class frmDesempenhoAtivo(FrameMG):
     def chama_Dialog_conta(self, event):
         dlg = SelecionaContaDialog(None)
         if dlg.ShowModal() == wx.ID_OK and dlg.selected_id:  # Retorna wx.ID_OK ao confirmar
-            self.idconta = dlg.selected_id
+            idConta = dlg.selected_id
             self.nomeConta = dlg.selected_nome
 
-            listaConta = Conta.selectOneById(self.idconta)
+            listaConta = Conta.mc_select_one_by_id(idConta)
             if listaConta:
                 if self.nomeBolsa:
                     self.SetTitle('Renda Fixa - Desempenho de ativo -  Conta ' + self.nomeConta + ' para ' + self.nomeBolsa)
@@ -354,11 +349,6 @@ class frmDesempenhoAtivo(FrameMG):
                     else:
                         self.txtNomeMoeda.SetValue('')
                         self.txtValorMoeda.SetValue('')
-
-                self.btnOk.Enable()
-                self.botaoCapital.Enable()
-                self.botaoDespesas.Enable()
-                self.btnInsereOperacao.Enable()
 
         dlg.Destroy()
 
@@ -393,7 +383,7 @@ class frmDesempenhoAtivo(FrameMG):
     def chama_frmcarteira(self, evento):
 
         if self.frmCarteira is None:  # Se não existir, cria uma nova janela
-            self.frmCarteira = FrmCarteira(self.idconta, self.nomeBolsa)
+            self.frmCarteira = FrmCarteira(self.idConta, self.nomeBolsa)
             self.frmCarteira.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmCarteira"))
             self.frmCarteira.Show()
         else:
@@ -402,7 +392,7 @@ class frmDesempenhoAtivo(FrameMG):
     def chama_frmproventos(self, evento):
 
         if self.frmProvento is None:  # Se não existir, cria uma nova janela
-            self.frmProvento = FrmProvento(self.idconta)
+            self.frmProvento = FrmProvento(self.idConta)
             self.frmProvento.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmProvento"))
             self.frmProvento.Show()
         else:
@@ -423,7 +413,7 @@ class frmDesempenhoAtivo(FrameMG):
     def chama_frmdespesas(self, evento):
 
         if self.frmDespesa is None:  # Se não existir, cria uma nova janela
-            self.frmDespesa = FrmDespesa(self.idconta)
+            self.frmDespesa = FrmDespesa(self.idConta)
             self.frmDespesa.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmDespesa"))
             self.frmDespesa.Show()
         else:
@@ -434,7 +424,7 @@ class frmDesempenhoAtivo(FrameMG):
         self.awsomeCotacao.busca_euro()
 
         if self.frmCapital is None:
-            self.frmCapital = FrmCapital(self.idconta)
+            self.frmCapital = FrmCapital(self.idConta)
             self.frmCapital.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmCapital"))
             self.frmCapital.Show()
         else:
@@ -733,22 +723,28 @@ class frmDesempenhoAtivo(FrameMG):
 
     def busca_ativo(self, item):
         siglaAtivo = self.txtAtivo.Value
+        avanca = True        
+        if self.idBolsa == None or self.idConta == None:
+            dlg = wx.MessageDialog(None, 'Conta corrente ou Bolsa não definidos', 'Erro de inserção', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+            avanca = False
         
-        if len(siglaAtivo) > 0:
-            self.ativo.populaAtivoBySigla(siglaAtivo) #, self.idconta)
+        if avanca:
+            if len(siglaAtivo) > 0:
+                self.ativo.populaAtivoBySigla(siglaAtivo) #, self.idconta)
 
-            if self.ativo.getid_ativo() > 0:
-                self.ativo.setlan(self.idconta)
-                self.ativo.buscaProventos(self.idconta, False)
-                self.saldoBancario = Conta.mc_get_saldo_bancario(self.idconta)
-                self.saldoBancarioTeorico = Conta.mc_get_saldo_bancario_teorico(self.idconta)
-                self.montaGrid(self.ativo.lan)
-                self.gridProventos(self.ativo.proventos)
-                self.gridRadar(self.ativo.buscarRadar(siglaAtivo))
-                self.ordenarGrid()
-            else:
-                dlg = wx.MessageDialog(None, 'Não foi encontrado o ativo indicado!', 'Erro no Ativo!', wx.OK | wx.ICON_ERROR)
-                result = dlg.ShowModal()
+                if self.ativo.id_ativo > 0:
+                    self.ativo.setlan(self.idConta)
+                    self.ativo.busca_proventos_do_ativo(self.idConta, False)
+                    self.saldoBancario = Conta.mc_get_saldo_bancario(self.idConta)
+                    self.saldoBancarioTeorico = Conta.mc_get_saldo_bancario_teorico(self.idConta)
+                    self.montaGrid(self.ativo.lan)
+                    self.gridProventos(self.ativo.proventos)
+                    self.gridRadar(self.ativo.busca_radar(siglaAtivo))
+                    self.ordenarGrid()
+                else:
+                    dlg = wx.MessageDialog(None, 'Não foi encontrado o ativo indicado!', 'Erro no Ativo!', wx.OK | wx.ICON_ERROR)
+                    result = dlg.ShowModal()
 
     def insere_operacao(self, item):
         avanca = True
@@ -756,11 +752,16 @@ class frmDesempenhoAtivo(FrameMG):
         quantidade = 0
         valor = 0.0
         dataOperacao = self.txtDataOperacao.GetValue().Format('%d/%m/%Y')
-        #self.despesas.setdata_lancamento(self.txtDataLancamento.GetValue().)Format('%d/%m/%Y')
         siglaAtivo = self.txtAtivo.GetValue()
         simulacao = False
 
         avanca = self.ativo.existeAtivo(siglaAtivo)
+        if avanca:
+            if self.idBolsa == None or self.idConta == None:
+                dlg = wx.MessageDialog(None, 'Conta corrente ou Bolsa não definidos', 'Erro de inserção', wx.OK | wx.ICON_ERROR)
+                result = dlg.ShowModal()
+
+                avanca = False
         if avanca:
             operacao = self.cbOperacao.GetSelection() + 1
             if operacao < 1 or operacao > 2:
@@ -778,7 +779,7 @@ class frmDesempenhoAtivo(FrameMG):
                 simulacao = True
 
         if avanca:
-            if self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.idconta, simulado=simulacao) == True:
+            if self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.idConta, simulado=simulacao) == True:
                 self.txtQuatidade.SetValue('')
                 self.txtValor.SetValue('')
                 self.busca_ativo(item)

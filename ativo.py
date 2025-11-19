@@ -216,7 +216,7 @@ class Ativo():
             self.conexao.close()
             return retorno
 
-    def buscaProventos(self, idconta, pago):
+    def busca_proventos_do_ativo(self, idconta, pago):
 
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
@@ -496,7 +496,7 @@ class Ativo():
                 else:
                     self.listaRendaProventos.append([dataOperacao, valorRendimento])
 
-    def buscarRadar(self, siglaAtivo):
+    def busca_radar(self, siglaAtivo):
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
         lista = []

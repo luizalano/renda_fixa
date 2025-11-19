@@ -276,6 +276,13 @@ class Conta:
                             '(SELECT cot.valorcotacao FROM cotacao as cot join moeda as m on m.id = cot.idmoeda ' \
                             'WHERE cot.datacotacao = (SELECT MAX(datacotacao) FROM cotacao) and cot.idmoeda = c.idmoeda) ' \
                             'FROM conta as c ORDER BY nomeconta;'
+            
+            clausulaSql = 'SELECT c.id, c.nomeconta, (select upper(m.nomemoeda) from moeda as m where m.id = c.idmoeda), ' \
+                            '(SELECT cot.valorcotacao FROM cotacao as cot join moeda as m on m.id = cot.idmoeda ' \
+                            'WHERE cot.datacotacao = (SELECT MAX(datacotacao) FROM cotacao) and cot.idmoeda = c.idmoeda) ' \
+                            'FROM conta as c ORDER BY nomeconta;'
+
+
             cursor.execute(clausulaSql)
 
             contas = cursor.fetchall()
