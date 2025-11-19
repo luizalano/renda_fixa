@@ -16,7 +16,7 @@ class RadarFrm(wx.Frame):
 
         self.SetPosition((10, 10))
         self.interesse = -1
-        self.primeiro_dia = date.today() - timedelta(days = 7)
+        self.dias_regresso = 7
         self.hoje = date.today()
 
         self.init_ui()
@@ -40,6 +40,10 @@ class RadarFrm(wx.Frame):
         filter_btn = wx.Button(panel, label="Filtrar")
         filter_btn.Bind(wx.EVT_BUTTON, self.on_filter)
 
+        self.dias_filter = wx.TextCtrl(panel)
+        regresso_btn = wx.Button(panel, label="Regresso")
+        regresso_btn.Bind(wx.EVT_BUTTON, self.on_regresso)
+
         interesse_btn = wx.Button(panel, label="Só de interesse")
         interesse_btn.Bind(wx.EVT_BUTTON, self.mostra_so_interesse)
 
@@ -56,6 +60,9 @@ class RadarFrm(wx.Frame):
         filter_box.Add(interesse_btn, flag=wx.LEFT, border=5, proportion=1)
         filter_box.Add(neutro_btn, flag=wx.LEFT, border=5, proportion=1)
         filter_box.Add(tudo_btn, flag=wx.LEFT, border=5, proportion=1)
+        filter_box.Add(wx.StaticText(panel, label="Regredir: "), flag=wx.LEFT | wx.RIGHT, border=5)
+        filter_box.Add(self.dias_filter, proportion=1)
+        filter_box.Add(regresso_btn, flag=wx.LEFT, border=5, proportion=1)
         filter_box.Add(wx.StaticText(panel, label="Filtrar por DY: "), flag=wx.LEFT | wx.RIGHT, border=5)
         filter_box.Add(self.dy_filter, proportion=1)
         filter_box.Add(filter_btn, flag=wx.LEFT, border=5, proportion=1)
@@ -94,7 +101,7 @@ class RadarFrm(wx.Frame):
         self.monta_combo_bolsa()
 
     def monta_combo_bolsa(self):
-        lista = Bolsa.mc_select_all()
+        lista = Bolsa.mc_select_all_order_sigla()
         self.cbBolsa.Clear()
         for row in lista:
             self.cbBolsa.Append(row[1])
@@ -180,10 +187,10 @@ class RadarFrm(wx.Frame):
         filter_dy = devolveFloat(self.dy_filter.GetValue())
         self.populate_grid(filter_dy=filter_dy, interesse=self.interesse)
 
-    def populate_grid(self, filter_dy=None, order_by="datacom", interesse=-1):
+    def populate_grid(self, filter_dy=None, filter_dias=7, order_by="datacom", interesse=-1):
         if self.sigla_bolsa:
             try:
-                data = Ativo.mc_busca_radar(filter_dy, order_by, interesse, self.primeiro_dia, self.sigla_bolsa)
+                data = Ativo.mc_busca_radar(filter_dy, order_by, interesse, filter_dias, self.sigla_bolsa)
 
                 self.grid.ClearGrid()
                 if self.grid.GetNumberRows() > 0:
@@ -238,8 +245,23 @@ class RadarFrm(wx.Frame):
                 wx.MessageBox(f"Erro ao buscar dados: {e}", "Erro", wx.OK | wx.ICON_ERROR)
 
     def on_filter(self, event):
-        filter_dy = devolveFloat(self.dy_filter.GetValue().replace('.',','))
-        self.populate_grid(filter_dy=filter_dy, interesse=self.interesse)
+        try:
+            filter_dy = devolveFloat(self.dy_filter.GetValue().replace('.',','))
+            filter_dias = devolveInteger(self.dias_filter.GetValue().replace('.',','))
+            #self.dias_regresso = int(filter_dias)
+            self.populate_grid(filter_dy=filter_dy, filter_dias=filter_dias, interesse=self.interesse)
+        except ValueError:
+            wx.MessageBox("Por favor, insira um número válido para os dias de regresso ou DY.", "Erro", wx.OK | wx.ICON_ERROR)
+        
+
+    def on_regresso(self, event):
+        try:
+            filter_dias = devolveInteger(self.dias_filter.GetValue().replace('.',','))
+            filter_dy = devolveFloat(self.dy_filter.GetValue().replace('.',','))
+            #self.dias_regresso = int(filter_dias)
+            self.populate_grid(filter_dy=filter_dy, filter_dias=filter_dias, interesse=self.interesse)
+        except ValueError:
+            wx.MessageBox("Por favor, insira um número válido para os dias de regresso ou DY.", "Erro", wx.OK | wx.ICON_ERROR)
 
     def on_sort_column(self, event):
         col = event.GetCol()

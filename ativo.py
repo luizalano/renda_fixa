@@ -676,7 +676,7 @@ class Ativo():
         conexao.close()
 
     @staticmethod
-    def mc_busca_radar(filter_dy=None, order_by="datacom", filter_interesse=-1, primeiro_dia=None, sigla_bolsa=None):
+    def mc_busca_radar(filter_dy=None, order_by="datacom", filter_interesse=-1, filter_dias=0, sigla_bolsa=None):
         conexao = Ativo.getConexao()
         clausulaSql = ''
         lista = None
@@ -692,20 +692,19 @@ class Ativo():
 
         if filter_interesse:
             filtro=filter_interesse
-        if filter_dy is None:
+        if filter_dy is None: 
             clausulaSql = 'SELECT r.id, a.sigla, a.razaosocial, r.tipoprovento, r.datacom, r.dataprovavel, ' \
                 'r.valorprovento, r.ultimacotacao, r.dy, a.interesse FROM radar r ' \
                 'JOIN ativo as a ON r.idativo = a.id ' \
-                'where a.interesse >= ' + str(filtro) + ' and '\
-                'a.idbolsa = (select id from bolsa where sigla = \'' + sigla_bolsa + '\') and '\
+                'where a.idbolsa = (select id from bolsa where sigla = \'' + sigla_bolsa + '\') and '\
                 'a.interesse >= ' + str(filtro) + ' and ' \
-                'r.datacom >= \'' + str(primeiro_dia) + '\' ' \
+                'r.datacom >= CURRENT_DATE - INTERVAL \'' + str(filter_dias) + ' days\' ' \
                 'order by ' + sqlorderby      # r.datacom, a.sigla, r.dataprovavel'
         else:
             clausulaSql = 'SELECT r.id, a.sigla, a.razaosocial, r.tipoprovento, r.datacom, r.dataprovavel, ' \
                 'r.valorprovento, r.ultimacotacao, r.dy, a.interesse FROM radar r ' \
                 'JOIN ativo a ON r.idativo = a.id ' \
-                'where r.datacom >= \'' + str(primeiro_dia) + '\' and ' \
+                'where r.datacom >= CURRENT_DATE - INTERVAL \'' + str(filter_dias) + ' days\' and ' \
                 'a.idbolsa = (select id from bolsa where sigla = \'' + sigla_bolsa + '\') and '\
                 'a.interesse >= ' + str(filtro) + ' and ' \
                 'r.dy >= ' + str(filter_dy) + ' ' \

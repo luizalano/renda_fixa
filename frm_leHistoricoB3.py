@@ -32,7 +32,7 @@ class LeHistoricoB3(wx.Frame):
 
     def on_selecionar_arquivo(self, event):
         dlg = wx.DirDialog(self, "Escolha a pasta com arquivos CSV",
-                        defaultPath=r"C:\Users\luiza\OneDrive\Documentos\VidaDeProgramador\Python\b3-VS\b3\negociosdodia",
+                        defaultPath=r"C:\Users\luiza\OneDrive\Documentos\VidaDeProgramador\Python\b3-VS\renda_fixa\negociosdodia",
                         style=wx.DD_DEFAULT_STYLE)
 
         if dlg.ShowModal() == wx.ID_OK:

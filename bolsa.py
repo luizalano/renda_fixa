@@ -139,14 +139,14 @@ class Bolsa:
             return None
 
     @staticmethod
-    def mc_select_all():
+    def mc_select_all_order_sigla():
         lista = None
         conexao = ConectaBD.retornaConexao()
 
         try:
             cursor = conexao.cursor()
             clausulaSql = "SELECT id, sigla, nomebolsa, nomeindice, idmoeda " \
-                        "FROM bolsa order by nomebolsa"
+                        "FROM bolsa order by sigla"
             cursor.execute(clausulaSql)
             lista = cursor.fetchall()
         except Exception as e:

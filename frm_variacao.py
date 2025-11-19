@@ -4,6 +4,7 @@
 from wx import *
 import wx.grid
 import psycopg2
+from bolsa import Bolsa
 from diversos import *
 from datetime import *
 import numpy as np
@@ -127,21 +128,7 @@ class VariacaoFrm(wx.Frame):
             return False
 
     def monta_combo_bolsa(self):
-        conexao =self.getConexao()
-
-        clausulaSql = 'SELECT sigla FROM bolsa order by sigla;'
-        lista = []
-        try:
-            with conexao.cursor() as cursor:
-                cursor.execute(clausulaSql)
-                lista = cursor.fetchall()
-
-        except  Exception as e:
-            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler bolsas', wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
-
-        conexao.close()
-
+        lista = Bolsa.mc_select_all_order_sigla()
         self.cbBolsa.Clear()
         for row in lista:
             self.cbBolsa.Append(row[0])
