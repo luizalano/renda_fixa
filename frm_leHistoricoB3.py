@@ -14,7 +14,7 @@ class LeHistoricoB3(wx.Frame):
         panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
-        self.btnSelecionar = wx.Button(panel, label="Selecionar arquivo de histórico")
+        self.btnSelecionar = wx.Button(panel, label="Selecionar pasta onde estão as cotações")
         self.btnSelecionar.Bind(wx.EVT_BUTTON, self.on_selecionar_arquivo)
         vbox.Add(self.btnSelecionar, flag=wx.EXPAND | wx.ALL, border=10)
 

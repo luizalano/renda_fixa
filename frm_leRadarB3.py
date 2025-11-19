@@ -30,7 +30,7 @@ class LeRadarB3(wx.Frame):
 
     def on_selecionar_arquivo(self, event):
         dlg = wx.FileDialog(self, "Escolha o arquivo CSV", 
-                            defaultDir=r"C:\\Users\\luiza\\OneDrive\\Documentos\\VidaDeProgramador\\Python\\b3-VS\\randa_fixa\\negociosdodia",
+                            defaultDir=r"C:\\Users\\luiza\\OneDrive\\Documentos\\VidaDeProgramador\\Python\\b3-VS\\renda_fixa\\negociosdodia",
                             wildcard="Arquivos XLSX (*.xlsx)|*.xlsx",
                             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
 
