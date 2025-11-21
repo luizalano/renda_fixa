@@ -117,7 +117,7 @@ class FrmProvento(FrameMG):
         
         label7, self.txtLiquido = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 7),
                                                     label='Líquido', tamanho = (15, 1),
-                                                    max=0, multi=False, tipofloat=True, readonly = True)
+                                                    max=0, multi=False, readonly = True)
         
         self.txtValorBruto.Bind(wx.EVT_KILL_FOCUS, self.mostraValorLiquido)
         self.txtValorIr.Bind(wx.EVT_KILL_FOCUS, self.mostraValorLiquido)
@@ -419,15 +419,10 @@ class FrmProvento(FrameMG):
         if len(self.txtValorBruto.GetValue()) <= 0: self.txtValorBruto.SetValue('0.0')
         if len(self.txtValorIr.GetValue()) <= 0: self.txtValorIr.SetValue('0.0')
 
-        aux = self.txtValorBruto.GetValue()
-        aux = aux.replace('.','')
-        aux = aux.replace(',','.')
-        self.provento.set_valor_bruto(float(aux))
-        aux = self.txtValorIr.GetValue()
-        aux = aux.replace('.','')
-        aux = aux.replace(',','.')
-        self.provento.set_valor_ir(float(aux))
-
+        aux = devolve_float(self.txtValorBruto.GetValue())
+        self.provento.set_valor_bruto(aux)
+        aux = devolve_float(self.txtValorIr.GetValue())
+        self.provento.set_valor_ir(aux)
         liquido = self.provento.valor_bruto - self.provento.valor_ir
         self.txtLiquido.SetValue(str(formata_numero(liquido)))
 
@@ -437,13 +432,11 @@ class FrmProvento(FrameMG):
         self.disabilita_componentes()
 
     def salva_elemento(self, event):
-        self.provento.set_data_recebimento(self.txtDataRecebimento.GetValue().Format('%d/%m/%Y'))
+        aux = self.txtDataRecebimento.GetValue().Format('%d/%m/%Y')
+        self.provento.set_data_recebimento(aux)
 
-        if len(self.txtValorBruto.GetValue()) <= 0: self.txtValorBruto.SetValue('0.0')
-        if len(self.txtValorIr.GetValue()) <= 0: self.txtValorIr.SetValue('0.0')
-
-        self.provento.set_valor_bruto(float(str(self.txtValorBruto.GetValue()).replace(',','.')))
-        self.provento.set_valor_ir(float(str(self.txtValorIr.GetValue()).replace(',','.')))
+        self.provento.set_valor_bruto(devolve_float(self.txtValorBruto.GetValue()))
+        self.provento.set_valor_ir(devolve_float(self.txtValorIr.GetValue()))
         self.provento.set_sigla_ativo(self.txtSiglaAtivo.GetValue())
         self.provento.set_nome_tipo_provento(self.cbTipoProvento.GetStringSelection())
         self.provento.set_nome_conta(self.cbConta.GetStringSelection())

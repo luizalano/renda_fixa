@@ -312,7 +312,6 @@ class FrmDespesa(FrameMG):
         saldoBancario = Conta.mc_get_saldo_bancario(self.idConta)
         self.txtSaldoBancario.SetValue(formata_numero(saldoBancario))
 
-
     def on_left_click(self, event):
         row = event.GetRow()  # Obtém a linha clicada
         col = event.GetCol()  # Obtém a coluna clicada
@@ -377,7 +376,7 @@ class FrmDespesa(FrameMG):
         self.despesas.set_data_lancamento(self.txtDataLancamento.GetValue().Format('%d/%m/%Y'))
         self.despesas.set_descricao(self.txtDescricao.Value)
         self.despesas.set_numero_nota(self.txtNotaNegociacao.Value)
-        self.despesas.set_valor(devolveFloat(str(self.txtValor.Value).replace('.',',')))
+        self.despesas.set_valor(devolve_float(str(self.txtValor.Value)))
         self.despesas.set_id_conta(self.idConta)
         self.despesas.set_id_tipo_despesa(self.id_tipo_despesa)
         if self.insert is True:

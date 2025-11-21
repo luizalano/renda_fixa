@@ -131,7 +131,7 @@ class VariacaoFrm(wx.Frame):
         lista = Bolsa.mc_select_all_order_sigla()
         self.cbBolsa.Clear()
         for row in lista:
-            self.cbBolsa.Append(row[0])
+            self.cbBolsa.Append(row[1])
 
     def bolsa_selecionada(self, event):
         self.sigla_bolsa = self.cbBolsa.GetStringSelection()

@@ -229,7 +229,7 @@ class FrmCapital(FrameMG):
             self.grid.SetCellAlignment(linha, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             self.grid.SetCellAlignment(linha, 3, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
 
-            valor = devolveFloat(row[3])
+            valor = devolve_float_de_formatacao_completa(row[3])
             if valor < 0:
                 self.totalRetirada += valor
             else:
@@ -297,11 +297,9 @@ class FrmCapital(FrameMG):
         self.limpa_elementos()
 
     def salva_elemento(self, event):
-        #data_selecionada = self.txtDataLancamento.GetValue()
-        #data_formatada = self.txtDataLancamento.GetValue().Format('%Y-%m-%d')
         self.capital.set_data_lancamento(self.txtDataLancamento.GetValue().Format('%d/%m/%Y'))
-        self.capital.set_descricao(self.txtDescricao.Value)
-        self.capital.set_valor(devolveFloat(str(self.txtValor.Value).replace('.', ',')))
+        self.capital.set_descricao(self.txtDescricao.GetValue())
+        self.capital.set_valor(devolve_float_de_formatacao_completa(str(self.txtValor.GetValue())))
         self.capital.set_id_conta(self.idConta)
 
         if self.insert is True:

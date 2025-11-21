@@ -495,7 +495,7 @@ class FrameMG(wx.Frame):
 
         char = chr(keycode)
 
-        if keycode in permitidos or char.isdigit() or char in ('.', ',','-'):
+        if keycode in permitidos or char.isdigit() or char in ('.', '-'):
             event.Skip()
         else:
             wx.Bell()

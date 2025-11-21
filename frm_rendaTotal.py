@@ -565,11 +565,11 @@ class FrmRendaTotal(wx.Frame):
         for row in range(grid_total.GetNumberRows()):
             
             linha += 1
-            aporte = devolveFloat(grid_total.GetCellValue(row, 2).replace('.',','))
-            retirada = devolveFloat(grid_total.GetCellValue(row, 3).replace('.',','))
-            rendimento = devolveFloat(grid_total.GetCellValue(row, 4).replace('.',','))
-            provento = devolveFloat(grid_total.GetCellValue(row, 5).replace('.',','))
-            despesa = devolveFloat(grid_total.GetCellValue(row, 6).replace('.',','))
+            aporte = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 2).replace('.',','))
+            retirada = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 3).replace('.',','))
+            rendimento = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 4).replace('.',','))
+            provento = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 5).replace('.',','))
+            despesa = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 6).replace('.',','))
 
             rendaMes = rendimento + provento - despesa
 

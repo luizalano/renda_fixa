@@ -509,7 +509,7 @@ class frmDesempenhoAtivo(FrameMG):
             dataOperacao = devolveDateStr(row[1])
             numoperacao = devolveInteger(row[2])
             operacao =''
-            valorOperacao = devolveFloat(row[4])
+            valorOperacao = devolve_float_de_formatacao_completa(row[4])
             qtdeOperacao = devolveInteger(row[3])
             valorCompraStr = ''
             valorVendaStr = ''
@@ -582,7 +582,7 @@ class frmDesempenhoAtivo(FrameMG):
 
         for row in lista:
             dataOperacao = devolveDateStr(row[1])
-            valorOperacao = devolveFloat(row[2])
+            valorOperacao = devolve_float_de_formatacao_completa(row[2])
             foiPago = row[4]
             tipoProvento = row[3]
             linha = self.contador
@@ -622,8 +622,8 @@ class frmDesempenhoAtivo(FrameMG):
         for row in lista:
             dataOperacao = devolveDateStr(row[1])
             dataProvavel = devolveDateStr(row[2])
-            valorprovento = devolveFloat(row[5])
-            dy = devolveFloat(row[4])
+            valorprovento = devolve_float_de_formatacao_completa(row[5])
+            dy = devolve_float_de_formatacao_completa(row[4])
             tipoProvento = row[3]
             linha = self.contador
             self.grid.AppendRows()
@@ -677,7 +677,7 @@ class frmDesempenhoAtivo(FrameMG):
         for linha in range(self.grid.GetNumberRows()):
             #elf.grid.SetCellBackgroundColour(linha, coluna, wx.BLACK)  # Fundo preto
 
-            valor = devolveFloat(self.grid.GetCellValue(linha, 9))
+            valor = devolve_float_de_formatacao_completa(self.grid.GetCellValue(linha, 9))
             operacao = self.grid.GetCellValue(linha, 2)
             temradar = self.grid.GetCellValue(linha, 3)
             if operacao == 'PROVENTOS':
@@ -770,7 +770,7 @@ class frmDesempenhoAtivo(FrameMG):
             if quantidade <= 0:
                 avanca = False
             valor_str = str(self.txtValor.GetValue())
-            valor = devolveFloat(valor_str.replace('.',','))
+            valor = devolve_float(valor_str)
             if valor <= 0:
                 avanca = False
            

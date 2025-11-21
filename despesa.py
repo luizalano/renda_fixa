@@ -108,7 +108,7 @@ class Despesas():
     def set_data_lancamento(self, arg):
         self.data_lancamento = devolveDate(arg)
     def set_valor(self, arg):
-        self.valor = devolveFloat(arg)
+        self.valor = devolve_float_de_formatacao_completa(arg)
     def set_id_conta(self, arg):
         self.id_conta = 1
         lista = Conta.mc_select_one_by_id(arg)

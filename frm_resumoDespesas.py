@@ -80,7 +80,7 @@ class FrmResumoDespesas(wx.Frame):
                 total = 0
                 for coluna in range(self.grid.GetNumberCols()-2):
                     conteudo = self.grid.GetCellValue(linha, coluna +1)
-                    valor = devolveFloat(conteudo)
+                    valor = devolve_float_de_formatacao_completa(conteudo)
                     total = total + valor
                 self.grid.SetCellValue(linha, ultimaColuna, f"{total:.2f}".replace('.', ','))
                 formatar_celula_grid(self.grid, linha, ultimaColuna, align='direita', font_size=tamanhoFonte)

@@ -235,7 +235,7 @@ class FrmNegociadoNoDia(FrameMG):
             data_operacao = devolveDateStr(row[6])
             num_operacao = devolveInteger(row[10])
             operacao = ''
-            valor_operacao = devolveFloat(row[4])
+            valor_operacao = devolve_float_de_formatacao_completa(row[4])
             qtd_operacao = devolveInteger(row[5])
             valor_compra_str = ''
             valor_venda_str = ''
@@ -301,7 +301,7 @@ class FrmNegociadoNoDia(FrameMG):
             if quantidade <= 0:
                 avanca = False
             valor_str = str(self.txtValor.Value)
-            valor = devolveFloat(valor_str.replace('.', ','))
+            valor = devolve_float_de_formatacao_completa(valor_str.replace('.', ','))
             if valor <= 0:
                 avanca = False
             if self.cbSimulado.GetSelection() == 0:
@@ -355,7 +355,7 @@ class FrmNegociadoNoDia(FrameMG):
             if quantidade <= 0:
                 avanca = False
             valor_str = str(self.txtValor.Value)
-            valor = devolveFloat(valor_str.replace('.', ','))
+            valor = devolve_float_de_formatacao_completa(valor_str.replace('.', ','))
             if valor <= 0:
                 avanca = False
             if self.cbSimulado.GetSelection() == 0:

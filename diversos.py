@@ -88,6 +88,7 @@ def devolveDate(arg):
 
     if str(tipo) == "<class 'str'>":
         aux = arg.strip()
+        aux = aux.replace('/', '-')
         try:
             return datetime.strptime(aux, '%Y-%m-%d')
         except  Exception as e:
@@ -100,6 +101,25 @@ def devolveDate(arg):
         return arg
 
     return None
+
+def devolveDateTime(arg):
+    tipo = type(arg)
+
+    if str(tipo) == "<class 'str'>":
+        aux = arg.strip()
+        try:
+            return datetime.strptime(aux, '%Y-%m-%d %H:%M:%S')
+        except  Exception as e:
+            try:
+                return datetime.strptime(aux, '%d-%m-%Y %H:%M:%S')
+            except  Exception as e:
+                return None
+    
+    if str(tipo) == "<class 'datetime.datetime'>" or str(tipo) == "<class 'datetime.date'>":
+        return arg
+
+    return None
+
 
 def devolveDataDMY(arg):
     locale.setlocale(locale.LC_ALL, 'C') # pt-BR.UTF-8
@@ -268,11 +288,30 @@ def formatar_int(valor):
     return f"{valor:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-def devolveFloat(arg):
+def devolve_float_de_formatacao_completa(arg):
     aux = arg
     tipo = type(aux)
     if str(tipo) == "<class 'str'>":
         aux = aux.replace('.', '')
+        aux = aux.replace(',', '.')
+        try:
+            return float(aux)
+        except  Exception as e:
+            return 0
+
+    tipo = type(arg)
+    if str(tipo) == "<class 'float'>":
+        return float(aux)
+
+    if str(tipo) == "<class 'decimal.Decimal'>":
+        return float(arg)
+    else:
+        return 0
+
+def devolve_float(arg):
+    aux = arg
+    tipo = type(aux)
+    if str(tipo) == "<class 'str'>":
         aux = aux.replace(',', '.')
         try:
             return float(aux)
@@ -298,7 +337,7 @@ def devolveInteger(arg):
 
 
 def arredondaFloat(valor, casas):
-    num = devolveFloat(valor)
+    num = devolve_float_de_formatacao_completa(valor)
     dec = devolveInteger(casas)
     multi = 10 ** dec
     num = float(int(round(valor, casas) * multi) / multi)

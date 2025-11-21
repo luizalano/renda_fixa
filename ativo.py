@@ -433,7 +433,7 @@ class Ativo():
         for  row in self.lan:
             dataOperacao = row[1]
             numoperacao = devolveInteger(row[2])
-            valorOperacao = devolveFloat(row[4])
+            valorOperacao = devolve_float_de_formatacao_completa(row[4])
             qtdeOperacao = devolveInteger(row[3])
             valorCompraStr = ''
             valorVendaStr = ''
