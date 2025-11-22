@@ -299,7 +299,7 @@ class FrmCapital(FrameMG):
     def salva_elemento(self, event):
         self.capital.set_data_lancamento(self.txtDataLancamento.GetValue().Format('%d/%m/%Y'))
         self.capital.set_descricao(self.txtDescricao.GetValue())
-        self.capital.set_valor(devolve_float_de_formatacao_completa(str(self.txtValor.GetValue())))
+        self.capital.set_valor(devolve_float(str(self.txtValor.Value)))
         self.capital.set_id_conta(self.idConta)
 
         if self.insert is True:
