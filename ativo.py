@@ -156,7 +156,7 @@ class Ativo():
         
         retorno = True
         try:
-            self.conexao = self.getConexao
+            self.conexao = self.getConexao()
             cursor = self.conexao.cursor()
             # Inserir os dados na tabela 'operacao'
             insert_query = "update ativonegociado set simulado = False where id = %s;"
