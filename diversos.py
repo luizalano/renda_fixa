@@ -1,5 +1,6 @@
 # coding: utf-8
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN, getcontext
 from datetime import *
 import locale
 import math
@@ -82,6 +83,42 @@ def eh_data_validaymd(data_str, formato="%Y/%m/%d"):
     except ValueError:
         return False  # A data é inválida
 
+def _quantize_exp(precisao: int) -> Decimal:
+    """Retorna Decimal('0.01') para precisao=2, Decimal('0.1') para 1, etc."""
+    if precisao <= 0:
+        return Decimal('1')
+    return Decimal('1').scaleb(-precisao)  # 10**-precisao as Decimal
+
+def devolveDecimalDeFloat(valor: float, precisao: int, rounding=ROUND_DOWN) -> Decimal:
+    """
+    Recebe um float e devolve Decimal com 'precisao' casas decimais.
+    - Constrói o Decimal a partir de str(valor) para evitar imprecisões binárias.
+    - Usa quantize para aplicar o arredondamento desejado.
+    """
+    if valor is None:
+        return None
+    # criar Decimal a partir da string do float para preservar representação decimal
+    d = Decimal(str(valor))
+    exp = _quantize_exp(precisao)
+    return d.quantize(exp, rounding=rounding)
+
+def devolveFloatDeDecimal(valor: Decimal, precisao: int, rounding=ROUND_DOWN) -> float:
+    """
+    Recebe um Decimal e devolve float com 'precisao' casas decimais.
+    - Mantém a operação em Decimal e converte para float apenas no final.
+    """
+    if valor is None:
+        return None
+    tipo = type(valor)
+    if str(tipo) == "<class 'decimal.Decimal'>":
+        exp = _quantize_exp(precisao)
+        d = valor.quantize(exp, rounding=rounding)
+        return float(d)
+    elif str(tipo) == "<class 'float'>":
+        return valor
+    elif str(tipo) == "<class 'int'>":
+        return float(valor)
+    return None
 
 def devolveDate(arg):
     tipo = type(arg)

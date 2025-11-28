@@ -1,4 +1,5 @@
 #import wx
+from decimal import *
 import wx.grid
 from ativoNegociado import AtivoNegociado
 from cotacao import *
@@ -112,7 +113,7 @@ class FrmRendaTotal(wx.Frame):
 
         for id_conta, nomeconta, nomemoeda, cotacaoMoeda in contas:
             if cotacaoMoeda is None:
-                valor = 1
+                valor = Decimal(1.0)
             else:
                 valor = cotacaoMoeda
             self.listaContas.append([id_conta, nomeconta, nomemoeda, valor])
@@ -126,7 +127,7 @@ class FrmRendaTotal(wx.Frame):
             # adiciona informações extras na aba
             self.tabs_data[nomeconta]["id"] = id_conta
             self.tabs_data[nomeconta]["moeda"] = nomemoeda
-            self.tabs_data[nomeconta]["cotacao"] = valor
+            self.tabs_data[nomeconta]["cotacao"] = devolveFloatDeDecimal(valor, 6)
 
     def removeTab(self, nome_tab):
         """Remove uma aba do Notebook pelo nome"""
@@ -162,7 +163,7 @@ class FrmRendaTotal(wx.Frame):
             if len(self.listaAtivos) == 0:
                 self.removeTab(row[1])
             else:
-                self.cotacaoAtual = row[3]
+                self.cotacaoAtual = devolveFloatDeDecimal(row[3], 2)
                 self.buscaRendaPorAtivo(row[0])
                 self.buscaDespesas(row[0])
                 self.buscaCapital(row[0])
@@ -209,7 +210,7 @@ class FrmRendaTotal(wx.Frame):
         for  row in self.lan:
             dataOperacao = row[1]
             numoperacao = int(row[2])
-            valorOperacao = float(row[4])# * self.cotacaoAtual
+            valorOperacao = devolveFloatDeDecimal(row[4], 2) 
             qtdeOperacao = int(row[3])
             if numoperacao == 1:
                 totalOperacao = qtdeOperacao * valorOperacao
@@ -235,8 +236,7 @@ class FrmRendaTotal(wx.Frame):
 
         for row in listaProvisoria:
             dataOperacao = row[0].strftime("%Y/%m")
-            #valorRendimento = float(int(row[1] * 100.0) / 100.0)
-            valorRendimento = float(row[1])
+            valorRendimento = devolveFloatDeDecimal(row[1], 2) 
             if len(self.listaRendaAcoes) == 0:
                 self.listaRendaAcoes.append([dataOperacao, valorRendimento])
             else:
@@ -250,7 +250,7 @@ class FrmRendaTotal(wx.Frame):
     def encheListaRendaProventos(self):
         for row in self.proventos:
             dataOperacao = row[1].strftime("%Y/%m")
-            valorRendimento = float(int(row[2] * 100.0) / 100.0)# * self.cotacaoAtual
+            valorRendimento = devolveFloatDeDecimal(row[2], 2) 
             if len(self.listaRendaProventos) == 0:
                 self.listaRendaProventos.append([dataOperacao, valorRendimento])
             else:
@@ -266,7 +266,9 @@ class FrmRendaTotal(wx.Frame):
         lista = Despesas.mc_busca_despesas_por_conta(idconta)
         for row in lista:
             dataOperacao = row[0].strftime("%Y/%m")
-            valor = float(int(row[1] * 100.0) / 100.0)# * self.cotacaoAtual
+            #valor = float(int(row[1] * 100.0) / 100.0)# * self.cotacaoAtual
+            #cem = Decimal('100.00')
+            valor = devolveFloatDeDecimal(row[1], 2) 
             if len(self.listaDespesas) == 0:
                 self.listaDespesas.append([dataOperacao, valor])
             else:
@@ -283,7 +285,7 @@ class FrmRendaTotal(wx.Frame):
         self.listaRetirada.clear()
         for row in lista:
             dataOperacao = row[0].strftime("%Y/%m")
-            valor = float(int(row[1] * 100.0) / 100.0)# * self.cotacaoAtual
+            valor = devolveFloatDeDecimal(row[1], 2) 
             if valor < 0:
                 if len(self.listaRetirada) == 0:
                     self.listaRetirada.append([dataOperacao, valor])
