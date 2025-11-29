@@ -104,13 +104,13 @@ class Ativo():
             resultado = cursor.fetchone()
 
             idativo = resultado[0]
-
+            valor = devolveDecimalDeFloat(valoroperacao, 2)
             # Inserir os dados na tabela 'operacao'
             insert_query = """
                 INSERT INTO ativonegociado (idativo, operacao, valoroperacao, qtdeoperacao, dataoperacao, idconta, simulado)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(insert_query, (idativo, operacao, valoroperacao, qtdeoperacao, dataoperacao, idconta, simulado))
+            cursor.execute(insert_query, (idativo, operacao, valor, qtdeoperacao, dataoperacao, idconta, simulado))
 
         except Exception as e:
             retorno = False
@@ -360,7 +360,7 @@ class Ativo():
             result = dlg.ShowModal()
 
         row = cursor.fetchone()
-        self.clearAtivo()
+        #self.clearAtivo()
         if row != None:
             retorno = True
 

@@ -106,7 +106,7 @@ class FrmNegociadoNoDia(FrameMG):
 
     def inicia_valores(self):
         self.id_conta = self.conta_bancaria
-        lista = Conta.selectOneById(self.id_conta)
+        lista = Conta.mc_select_one_by_id(self.id_conta)
         if lista:
             self.nome_conta = lista[4]
             self.SetTitle('Ativos Negociados na data - Conta ' + self.nome_conta)

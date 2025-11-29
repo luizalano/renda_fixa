@@ -97,7 +97,16 @@ def devolveDecimalDeFloat(valor: float, precisao: int, rounding=ROUND_DOWN) -> D
     """
     if valor is None:
         return None
-    # criar Decimal a partir da string do float para preservar representação decimal
+    tipo = type(valor)
+    if str(tipo) == "<class 'decimal.Decimal'>":
+        return valor
+    elif str(tipo) == "<class 'int'>":
+        valor = float(valor)
+    elif str(tipo) != "<class 'float'>":
+        return None
+    
+    # criar Decimal a partir da string do float 
+    # para preservar representação decimal
     d = Decimal(str(valor))
     exp = _quantize_exp(precisao)
     return d.quantize(exp, rounding=rounding)
