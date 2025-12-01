@@ -15,6 +15,8 @@ cor_branco = wx.Colour(255, 255, 255)
 cor_verdinho = wx.Colour(221, 255, 204)
 cor_amarelinho = wx.Colour(255, 255, 179)
 cor_cinzaclaro = wx.Colour(210, 219, 180)
+cem = Decimal('100.0')
+zero = Decimal('0.0')
 
 def redimensionaBitMap(bitmapin, largura, altura):
     imagem = bitmapin.ConvertToImage()
@@ -89,6 +91,30 @@ def _quantize_exp(precisao: int) -> Decimal:
         return Decimal('1')
     return Decimal('1').scaleb(-precisao)  # 10**-precisao as Decimal
 
+def semZeroNegativo(valor: Decimal, casas: int = 2) -> Decimal:
+    """
+    Remove o sinal negativo de zeros e ajusta para o número de casas decimais desejado.
+    """
+    # arredonda para o número de casas decimais
+    quantize_str = "0." + "0" * casas
+    valor = valor.quantize(Decimal(quantize_str))
+    
+    # se for zero, força para positivo
+    if valor == 0:
+        valor = Decimal(quantize_str)
+    return valor
+
+
+def devolve_decimal_de_formatacao_completa(arg):
+    aux = arg    
+    aux = aux.replace('.', '')
+    aux = aux.replace(',', '.')
+    try:
+        retorno = float(aux)
+    except  Exception as e:
+        retorno = 0.0
+    return devolveDecimalDeFloat(retorno, 2)
+
 def devolveDecimalDeFloat(valor: float, precisao: int, rounding=ROUND_DOWN) -> Decimal:
     """
     Recebe um float e devolve Decimal com 'precisao' casas decimais.
@@ -102,8 +128,6 @@ def devolveDecimalDeFloat(valor: float, precisao: int, rounding=ROUND_DOWN) -> D
         return valor
     elif str(tipo) == "<class 'int'>":
         valor = float(valor)
-    elif str(tipo) != "<class 'float'>":
-        return None
     
     # criar Decimal a partir da string do float 
     # para preservar representação decimal
@@ -328,7 +352,14 @@ def formata_numero_6(valor):
     return retorno
 
 def formatar_valor(valor):
-    return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    retorno = ''
+    tipo = type(valor)
+    if str(tipo) == "<class 'float'>":
+        retorno = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    elif str(tipo) == "<class 'decimal.Decimal'>":
+        valor_float = float(valor)
+        retorno = f"{valor_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return retorno
 
 def formatar_int(valor):
     return f"{valor:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")

@@ -22,13 +22,13 @@ class frmDesempenhoAtivo(FrameMG):
     caminho = '.\\icones\\'
     ordem = 'nome'
     escopo = 'tudo'
-    totalComprado = 0.0
-    totalRendimento = 0.0
-    totalProventos = 0.0
-    totalGeral = 0.0
+    totalComprado = Decimal('0.0')
+    totalRendimento = Decimal('0.0')
+    totalProventos = Decimal('0.0')
+    totalGeral = Decimal('0.0')
     tipoProvento = 0
-    proventoBruto = 0.0
-    proventoIR = 0.0
+    proventoBruto =Decimal('0.0')
+    proventoIR = Decimal('0.0')
     contador = 0
     idConta = -1
     nomeConta = ''
@@ -36,7 +36,6 @@ class frmDesempenhoAtivo(FrameMG):
     nomeBolsa = None
     #dbname = 'b3teste'
     dbname = 'b3'
-
 
     def __init__(self):
         self.ativo = Ativo()
@@ -492,28 +491,29 @@ class frmDesempenhoAtivo(FrameMG):
         self.lista = lista
 
         saldoQtde = 0
-        saldoValor = 0.0
+        saldoValor = Decimal('0.0')
         totalCompradoQtde = 0
-        self.totalComprado = 0.0
-        self.totalResultado = 0.0
-        self.totalRendimento = 0,0
-        self.totalProventos = 0.0
-        resultado = 0.0
-        precomedio = 0.0
+        self.totalComprado = Decimal('0.0')
+        self.totalResultado = Decimal('0.0')
+        self.totalRendimento = Decimal('0.0')
+        self.totalProventos = Decimal('0.0')
+        resultado = Decimal('0.0')
+        precomedio = Decimal('0.0')
         negocios = 0
         linha = 0
         self.contador = 0
-
+        
         for  row in self.lista:
             negocios +=1
             dataOperacao = devolveDateStr(row[1])
             numoperacao = devolveInteger(row[2])
             operacao =''
-            valorOperacao = devolve_float_de_formatacao_completa(row[4])
+            #valorOperacao = devolve_float_de_formatacao_completa(row[4])
+            valorOperacao = row[4]
             qtdeOperacao = devolveInteger(row[3])
             valorCompraStr = ''
             valorVendaStr = ''
-            ganho = 0.0
+            ganho = Decimal('0.0')
             strGanho = ""
             strResultado = ''
             simulado = row[5]
@@ -528,10 +528,11 @@ class frmDesempenhoAtivo(FrameMG):
                 totalOperacao = qtdeOperacao * valorOperacao
                 totalCompradoQtde += qtdeOperacao
                 self.totalComprado += totalOperacao
-                if precomedio == 0:
-                    precomedio = valorOperacao
-                else:
+                if precomedio > 0.0:
                     precomedio = ((precomedio * saldoQtde) + totalOperacao) / (saldoQtde + qtdeOperacao)
+                else:
+                    precomedio = valorOperacao
+                    
                 saldoQtde += qtdeOperacao
 
             else:
@@ -541,13 +542,13 @@ class frmDesempenhoAtivo(FrameMG):
                 totalOperacao = valorOperacao * qtdeOperacao
                 resultado = totalOperacao - (qtdeOperacao * precomedio)
                 ganho = resultado / (qtdeOperacao * precomedio)
-                ganho = ganho * 100.0
+                ganho = ganho * cem
                 strGanho = formata_numero(ganho) +  ' %'
                 self.totalResultado += resultado
                 saldoQtde -= qtdeOperacao
                 strResultado = formata_numero(resultado)
                 if saldoQtde == 0:
-                    precomedio = 0.0
+                    precomedio = Decimal('0.0')
 
             linha = self.contador
             self.grid.AppendRows()
@@ -577,8 +578,8 @@ class frmDesempenhoAtivo(FrameMG):
 
     def gridProventos(self, lista):
 
-        self.totalProventos = 0.0
-        resultado = 0.0
+        self.totalProventos = Decimal('0.0')
+        resultado = Decimal('0.0')
 
         for row in lista:
             dataOperacao = devolveDateStr(row[1])
@@ -609,10 +610,10 @@ class frmDesempenhoAtivo(FrameMG):
             if foiPago: self.totalProventos += valorOperacao
 
         self.totalGeral = self.totalProventos + self.totalResultado
-        if self.totalComprado != 0:
-            self.totalRendimento = (self.totalGeral / self.totalComprado) * 100
+        if self.totalComprado > 0.0:
+            self.totalRendimento = (self.totalGeral / self.totalComprado) * cem
         else:
-            self.totalRendimento = 0.0
+            self.totalRendimento = Decimal('0.0')
         self.txtProventos.SetValue(formata_numero(self.totalProventos))
         self.txtTotalGeral.SetValue(formata_numero(self.totalGeral))
         self.txtResultadoGeral.SetValue(formata_numero(self.totalRendimento) + ' %')

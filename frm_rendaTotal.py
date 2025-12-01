@@ -33,16 +33,15 @@ class FrmRendaTotal(wx.Frame):
         self.lan = []
         self.proventos = []
 
-        self.listaCotacaoAtual = 1.0
-        self.cotacaoAtual = 1.0
+        self.listaCotacaoAtual = Decimal('1.0')
+        self.cotacaoAtual = Decimal('1.0')
 
-        self.totalComprado = 0.0
-        self.totalCompras = 0.0
-        self.totalVendas = 0.0
-
-        self.totalCompradoReal = 0.0
-        self.totalComprasReal = 0.0
-        self.totalVendasReal = 0.0
+        self.totalComprado = Decimal('0.0')
+        self.totalCompras = Decimal('0.0')
+        self.totalVendas = Decimal('0.0')
+        self.totalCompradoReal = Decimal('0.0')
+        self.totalComprasReal = Decimal('0.0')
+        self.totalVendasReal = Decimal('0.0')
 
         # Criar Notebook para abas
         self.notebook = wx.Notebook(self)
@@ -127,7 +126,7 @@ class FrmRendaTotal(wx.Frame):
             # adiciona informações extras na aba
             self.tabs_data[nomeconta]["id"] = id_conta
             self.tabs_data[nomeconta]["moeda"] = nomemoeda
-            self.tabs_data[nomeconta]["cotacao"] = devolveFloatDeDecimal(valor, 6)
+            self.tabs_data[nomeconta]["cotacao"] = valor #devolveFloatDeDecimal(valor, 6)
 
     def removeTab(self, nome_tab):
         """Remove uma aba do Notebook pelo nome"""
@@ -163,7 +162,8 @@ class FrmRendaTotal(wx.Frame):
             if len(self.listaAtivos) == 0:
                 self.removeTab(row[1])
             else:
-                self.cotacaoAtual = devolveFloatDeDecimal(row[3], 2)
+                self.listaGeral.clear()
+                self.cotacaoAtual = row[3]  #devolveFloatDeDecimal(row[3], 2)
                 self.buscaRendaPorAtivo(row[0])
                 self.buscaDespesas(row[0])
                 self.buscaCapital(row[0])
@@ -176,9 +176,9 @@ class FrmRendaTotal(wx.Frame):
         self.listaRendaAcoes.clear()
         self.listaRendaProventos.clear()
         self.listaRendaDespesas.clear()
-        self.totalComprado = 0.0
-        self.totalCompras = 0.0
-        self.totalVendas = 0.0
+        self.totalComprado = Decimal('0.0')
+        self.totalCompras = Decimal('0.0')
+        self.totalVendas = Decimal('0.0')
 
         for row in self.listaAtivos:
             self.lan = AtivoNegociado.mc_devolve_lancamentos_ativo__por_conta(idativo=row[0], idconta=idconta)
@@ -199,26 +199,27 @@ class FrmRendaTotal(wx.Frame):
         """
         if nomeTab in self.tabs_data:
             return self.tabs_data[nomeTab].get("cotacao", 1)
-        return 1
+        return Decimal('1.0')
 
     def encheListaRendaAcoes(self):
         saldoQtde = 0
-        precomedio = 0.0
-        compras = 0.0
-        vendas = 0.0
+        precomedio = Decimal('0.0')
+        compras = Decimal('0.0')
+        vendas = Decimal('0.0')
         listaProvisoria = []
         for  row in self.lan:
             dataOperacao = row[1]
             numoperacao = int(row[2])
-            valorOperacao = devolveFloatDeDecimal(row[4], 2) 
+            valorOperacao = row[4]  #devolveFloatDeDecimal(row[4], 2) 
             qtdeOperacao = int(row[3])
             if numoperacao == 1:
                 totalOperacao = qtdeOperacao * valorOperacao
                 compras += totalOperacao
-                if precomedio == 0:
-                    precomedio = valorOperacao
-                else:
+                if precomedio > 0:
                     precomedio = ((precomedio * saldoQtde) + totalOperacao) / (saldoQtde + qtdeOperacao)
+                else:
+                    precomedio = valorOperacao
+                    
                 saldoQtde += qtdeOperacao
 
             else:
@@ -228,15 +229,16 @@ class FrmRendaTotal(wx.Frame):
 
                 saldoQtde -= qtdeOperacao
                 if saldoQtde == 0:
-                    precomedio = 0.0
+                    precomedio = Decimal('0.0')
 
-                if resultado != 0.0:
+                if resultado != Decimal('0.0'):
                     listaProvisoria.append([dataOperacao, resultado])
+                
         comprado = saldoQtde * precomedio
 
         for row in listaProvisoria:
             dataOperacao = row[0].strftime("%Y/%m")
-            valorRendimento = devolveFloatDeDecimal(row[1], 2) 
+            valorRendimento = row[1] #devolveFloatDeDecimal(row[1], 2) 
             if len(self.listaRendaAcoes) == 0:
                 self.listaRendaAcoes.append([dataOperacao, valorRendimento])
             else:
@@ -250,7 +252,7 @@ class FrmRendaTotal(wx.Frame):
     def encheListaRendaProventos(self):
         for row in self.proventos:
             dataOperacao = row[1].strftime("%Y/%m")
-            valorRendimento = devolveFloatDeDecimal(row[2], 2) 
+            valorRendimento = row[2] #devolveFloatDeDecimal(row[2], 2) 
             if len(self.listaRendaProventos) == 0:
                 self.listaRendaProventos.append([dataOperacao, valorRendimento])
             else:
@@ -268,7 +270,7 @@ class FrmRendaTotal(wx.Frame):
             dataOperacao = row[0].strftime("%Y/%m")
             #valor = float(int(row[1] * 100.0) / 100.0)# * self.cotacaoAtual
             #cem = Decimal('100.00')
-            valor = devolveFloatDeDecimal(row[1], 2) 
+            valor = row[1] #devolveFloatDeDecimal(row[1], 2) 
             if len(self.listaDespesas) == 0:
                 self.listaDespesas.append([dataOperacao, valor])
             else:
@@ -285,7 +287,7 @@ class FrmRendaTotal(wx.Frame):
         self.listaRetirada.clear()
         for row in lista:
             dataOperacao = row[0].strftime("%Y/%m")
-            valor = devolveFloatDeDecimal(row[1], 2) 
+            valor = row[1] #devolveFloatDeDecimal(row[1], 2) 
             if valor < 0:
                 if len(self.listaRetirada) == 0:
                     self.listaRetirada.append([dataOperacao, valor])
@@ -359,7 +361,7 @@ class FrmRendaTotal(wx.Frame):
                         self.listaGeral[linha][4] = valor
                         break
                 else:
-                    self.listaGeral.append([ref, 0, 0, 0, valor])
+                    self.listaGeral.append([ref, 0, 0, 0, valor, 0])
 
         for ref, valor in self.listaDespesas:
             if len(self.listaGeral) == 0:
@@ -382,18 +384,18 @@ class FrmRendaTotal(wx.Frame):
         if grid.GetNumberRows() > 0:
             grid.DeleteRows(0, grid.GetNumberRows())
         linha = (-1)
-        rendaAcumulada = 0.0
-        inicial = 0.0
-        saldo = 0.0
+        rendaAcumulada = Decimal('0.0')
+        inicial = Decimal('0.0')
+        saldo = Decimal('0.0')
         rendPercAcm = 0.0
         rendaMedia = 0.0
 
-        totalAporte  = 0.0
-        totalRetirada = 0.0
-        totalProventos = 0.0
-        totalRenda = 0.0
-        totalDespesas = 0.0
-        totalResultado = 0.0
+        totalAporte  = Decimal('0.0')
+        totalRetirada = Decimal('0.0')
+        totalProventos = Decimal('0.0')
+        totalRenda = Decimal('0.0')
+        totalDespesas = Decimal('0.0')
+        totalResultado = Decimal('0.0')
 
         for row in listaOrdenada:
 
@@ -401,8 +403,8 @@ class FrmRendaTotal(wx.Frame):
             grid.AppendRows()
             grid.SetCellValue(linha, 0, str(row[0]))
 
-            aporte = float(row[1])
-            retirada = row[2] * (-1.0)
+            aporte = row[1]
+            retirada = row[2] * Decimal('-1.0')
             rendimento = row[3]
             provento = row[4]
             despesa = row [5]
@@ -411,9 +413,9 @@ class FrmRendaTotal(wx.Frame):
             #saldo = saldo + aporte - retirada + rendimento + provento - despesa
             saldo = inicial + rendimento + provento - despesa
             rendaAcumulada = rendaAcumulada + rendimento + provento - despesa
-            if inicial != 0.0:
-                #rendperc = (rendimento + provento - despesa) / inicial
-                rendperc = ((inicial + rendimento + provento - despesa) / inicial) -1
+            if inicial != Decimal('0.0'):
+                auxDecimal = ((inicial + rendimento + provento - despesa) / inicial) -1
+                rendperc = devolveFloatDeDecimal(auxDecimal, 6)
             else:
                 rendperc = 0.0
             if linha > 0:
@@ -430,7 +432,7 @@ class FrmRendaTotal(wx.Frame):
             totalDespesas += despesa
             totalResultado += rendaMes
 
-            rendimento = float(int(rendimento * 100.0) / 100.0)
+            #rendimento = float(int(rendimento * 100.0) / 100.0)
 
             grid.SetCellValue(linha, 1, formata_numero(inicial))
             grid.SetCellValue(linha, 2, formata_numero(aporte))
@@ -524,10 +526,11 @@ class FrmRendaTotal(wx.Frame):
                     valor_str = valor_str.replace(",", ".")
                     #valor_str = grid.GetCellValue(row, col_idx).replace(",", ".")
                     try:
-                        valor = float(valor_str) if valor_str else 0
+                        valor = Decimal(valor_str) if valor_str else zero
                     except ValueError:
-                        valor = 0
-
+                        valor = zero
+                    if valor == 0:
+                        valor = Decimal('0.00')
                     consolidados[data][col_nome] += valor * cotacao
 
         # limpa a grid Total
@@ -551,35 +554,35 @@ class FrmRendaTotal(wx.Frame):
         # aqui você pode recalcular as demais colunas da aba Total (Renda Mês, Acumulado, % etc)
 
         linha = (-1)
-        rendaAcumulada = 0.0
-        inicial = 0.0
-        saldo = 0.0
+        rendaAcumulada = zero
+        inicial = zero
+        saldo = zero
         rendPercAcm = 0.0
         rendaMedia = 0.0
 
-        totalAporte  = 0.0
-        totalRetirada = 0.0
-        totalProventos = 0.0
-        totalRenda = 0.0
-        totalDespesas = 0.0
-        totalResultado = 0.0
+        totalAporte  = zero       
+        totalRetirada = zero
+        totalProventos = zero
+        totalRenda = zero
+        totalDespesas = zero
+        totalResultado = zero
 
         for row in range(grid_total.GetNumberRows()):
             
             linha += 1
-            aporte = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 2).replace('.',','))
-            retirada = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 3).replace('.',','))
-            rendimento = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 4).replace('.',','))
-            provento = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 5).replace('.',','))
-            despesa = devolve_float_de_formatacao_completa(grid_total.GetCellValue(row, 6).replace('.',','))
-
+            aporte = devolveDecimalDeFloat(grid_total.GetCellValue(row, 2), 2)
+            retirada = devolveDecimalDeFloat(grid_total.GetCellValue(row, 3), 2)
+            rendimento = devolveDecimalDeFloat(grid_total.GetCellValue(row, 4), 2)
+            provento = devolveDecimalDeFloat(grid_total.GetCellValue(row, 5), 2)
+            despesa = devolveDecimalDeFloat(grid_total.GetCellValue(row, 6), 2)
             rendaMes = rendimento + provento - despesa
 
             inicial = saldo + aporte - retirada
             saldo = inicial + rendimento + provento - despesa
             rendaAcumulada = rendaAcumulada + rendimento + provento - despesa
-            if inicial != 0.0:
-                rendperc = ((inicial + rendimento + provento - despesa) / inicial) -1
+            if inicial != zero:
+                auxdecimal = ((inicial + rendimento + provento - despesa) / inicial) -1
+                rendperc = devolveFloatDeDecimal(auxdecimal, 6)  
             else:
                 rendperc = 0.0
             if linha > 0:
@@ -596,7 +599,7 @@ class FrmRendaTotal(wx.Frame):
             totalDespesas += despesa
             totalResultado += rendaMes
 
-            rendimento = float(int(rendimento * 100.0) / 100.0)
+            #rendimento = float(int(rendimento * 100.0) / 100.0)
 
             grid_total.SetCellValue(row, 1, formata_numero(inicial))
             grid_total.SetCellValue(row, 2, formata_numero(aporte))
