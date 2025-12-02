@@ -234,7 +234,10 @@ class RadarFrm(wx.Frame):
                             if col_idx > 3 and col_idx < 6: alinha = 'centro'
                             elif col_idx > 5 and col_idx < 9: alinha = 'direita'
                             cell_attr = wx.grid.GridCellAttr()
-                            self.grid.SetCellValue(row_idx, col_idx, str(value))
+                            valor = value
+                            if col_idx == 8:
+                                valor = devolveDecimalDeFloat(str(value), 2)
+                            self.grid.SetCellValue(row_idx, col_idx, str(valor))
                             formatar_celula_grid(self.grid, row_idx, col_idx, bold=bold, italic=italico, 
                                                  background_color=bg, align=alinha, font_size=fontetamanho)
                     
