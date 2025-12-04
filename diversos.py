@@ -115,7 +115,7 @@ def devolve_decimal_de_formatacao_completa(arg):
         retorno = 0.0
     return devolveDecimalDeFloat(retorno, 2)
 
-def devolveDecimalDeFloat(valor: float, precisao: int, rounding=ROUND_DOWN) -> Decimal:
+def devolveDecimalDeFloat(valor: float, precisao=2, rounding=ROUND_DOWN) -> Decimal:
     """
     Recebe um float e devolve Decimal com 'precisao' casas decimais.
     - Constrói o Decimal a partir de str(valor) para evitar imprecisões binárias.
@@ -135,7 +135,7 @@ def devolveDecimalDeFloat(valor: float, precisao: int, rounding=ROUND_DOWN) -> D
     exp = _quantize_exp(precisao)
     return d.quantize(exp, rounding=rounding)
 
-def devolveFloatDeDecimal(valor: Decimal, precisao: int, rounding=ROUND_DOWN) -> float:
+def devolveFloatDeDecimal(valor: Decimal, precisao=2, rounding=ROUND_DOWN) -> float:
     """
     Recebe um Decimal e devolve float com 'precisao' casas decimais.
     - Mantém a operação em Decimal e converte para float apenas no final.

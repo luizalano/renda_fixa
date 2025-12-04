@@ -71,16 +71,26 @@ class Provento:
         self.data_recebimento = devolveDate(arg)
 
     def set_valor_bruto(self, arg):
-        if isinstance(arg, (int, float)) and arg >= 0:
-            self.valor_bruto = float(arg)
-        else:
-            self.valor_bruto = 0.0
+        tipo = type(arg)
+        valor = zero
+        if str(tipo) == "<class 'int'>":
+            valor = devolveDecimalDeFloat(float(arg))
+        if str(tipo) == "<class 'float'>":
+            valor = devolveDecimalDeFloat(arg)
+        elif str(tipo) == "<class 'decimal.Decimal'>":
+            valor = arg
+        self.valor_bruto = valor
 
     def set_valor_ir(self, arg):
-        if isinstance(arg, (int, float)) and arg >= 0:
-            self.valor_ir = float(arg)
-        else:
-            self.valor_ir = 0.0
+        tipo = type(arg)
+        valor = zero
+        if str(tipo) == "<class 'int'>":
+            valor = devolveDecimalDeFloat(float(arg))
+        if str(tipo) == "<class 'float'>":
+            valor = devolveDecimalDeFloat(arg)
+        elif str(tipo) == "<class 'decimal.Decimal'>":
+            valor = arg
+        self.valor_ir = valor
 
     def set_pago(self, arg):
         if isinstance(arg, (bool)):

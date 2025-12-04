@@ -294,8 +294,8 @@ class FrmProvento(FrameMG):
         #self.lista = self.provento.getAll()
         self.lista = Provento.sm_busca_por_periodo(dataInicial, self.id_conta)
         self.grid.ClearGrid()
-        self.total_proventos = 0.0
-        self.total_pendente = 0.0
+        self.total_proventos = zero
+        self.total_pendente = zero
 
         if self.grid.GetNumberRows() > 0:
             self.grid.DeleteRows(0, self.grid.GetNumberRows())
