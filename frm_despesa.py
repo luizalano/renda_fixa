@@ -120,9 +120,6 @@ class FrmDespesa(FrameMG):
 
         self.grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.on_left_click)
         self.grid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.on_right_click)
-        #self.grid.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.selecionaLinha)
-        #self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.selecionaLinha, self.grid)
-        #self.Bind(wx.EVT_CHAR_HOOK, self.teclaPressionada)
 
         aviso = wx.StaticText(self.painel,
                               label="Atenção!!\nEsta é uma tabela de despesa.\nOs valores relativos às despesas "
