@@ -248,16 +248,22 @@ class Conta:
                              'COALESCE(SUM(CASE WHEN operacao = 1 THEN valoroperacao * qtdeoperacao ELSE 0 END), 0) AS compras, ' \
                              'COALESCE(SUM(CASE WHEN operacao = 2 THEN valoroperacao * qtdeoperacao ELSE 0 END), 0) AS vendas ' \
                           'FROM ativonegociado where idconta = %s' \
+                          '), ' \
+                          'rendafixa AS ( ' \
+                          'SELECT ' \
+                             'COALESCE(SUM(CASE WHEN valor > 1 THEN valor ELSE 0 END), 0) AS investimento, ' \
+                             'COALESCE(SUM(CASE WHEN valor = 2 THEN valor ELSE 0 END), 0) AS resgate ' \
+                          'FROM rendafixa where alterasaldobancario = true and idconta = %s' \
                           ') ' \
                           'SELECT ' \
-                             ' v.proventos, v.despesas, v.aportes, t.compras, t.vendas, ' \
-                             '(v.proventos - v.despesas + v.aportes - t.compras + t.vendas) AS saldo ' \
-                          'FROM valores v, transacoes t;'
+                             ' v.proventos, v.despesas, v.aportes, t.compras, t.vendas, rf.investimento, rf.resgate, ' \
+                             '(v.proventos - v.despesas + v.aportes - t.compras + t.vendas - rf.investimento + rf.resgate) AS saldo ' \
+                          'FROM valores v, transacoes t, rendafixa rf;'
 
-            cursor.execute(clausulaSql, (conta, conta, conta, conta))
+            cursor.execute(clausulaSql, (conta, conta, conta, conta, conta))
             lista = cursor.fetchone()
             if lista:
-                return lista[5]
+                return lista[7]
             else:
                 return None
 
