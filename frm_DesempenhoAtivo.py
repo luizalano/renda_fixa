@@ -4,6 +4,7 @@ from frm_rendaTotal import *
 from frm_variacao import *
 from frm_capital import *
 from frm_carteira import *
+from frm_rendaFixa import *
 from cotacao import *
 from ativo import Ativo
 from diversos import *
@@ -48,6 +49,7 @@ class frmDesempenhoAtivo(FrameMG):
         self.frmNegociadoNoDia = None
         self.frmVariacao = None
         self.leRadarB3 = None
+        self.frmRendaFixa = None
 
         self.idBolsa = None
         self.idConta = None
@@ -226,17 +228,21 @@ class frmDesempenhoAtivo(FrameMG):
         labelOnze, self.txtSaldoTeorico = self.criaCaixaDeTexto(self.painel, pos=(x0 + 135, 12), label='Saldo teórico',
                                                            tamanho=(12, 1), max=6, multi=False)
 
+        self.iconeRendaFixa = wx.Bitmap(self.caminho + 'Cofre-32x32.png')
+        lb, ab = self.iconeRendaFixa.GetSize()
+        self.botaoRendaFixa = wx.BitmapButton(self.painel, id=132, bitmap=self.iconeRendaFixa, pos=(1100, 620))
+        self.Bind(wx.EVT_BUTTON, self.chama_frmRendaFixa, self.botaoRendaFixa)
+        self.botaoRendaFixa.SetToolTip("Renda Fixa")
+
         self.iconeVariacao = wx.Bitmap(self.caminho + 'stock-exchange-32.png')
         lb, ab = self.iconeVariacao.GetSize()
-        self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao,
-                                         pos=(1100, 620))
+        self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(1150, 620))
         self.Bind(wx.EVT_BUTTON, self.chama_frmvariacao, self.botaoVariacao)
         self.botaoVariacao.SetToolTip("Grafico da variação diária de ativos")
 
         self.iconeRenda = wx.Bitmap(self.caminho + 'Rendimento-64.png')
         lb, ab = self.iconeRenda.GetSize()
-        self.botaoRenda = wx.BitmapButton(self.painel, id=5202, bitmap=self.iconeRenda,
-                                         pos=(1170, 597))
+        self.botaoRenda = wx.BitmapButton(self.painel, id=5202, bitmap=self.iconeRenda, pos=(1200, 597))
         self.Bind(wx.EVT_BUTTON, self.chama_frmrRendaTotal, self.botaoRenda)
         self.botaoRenda.SetToolTip("Mapa de Rendimentos")
 
@@ -362,6 +368,15 @@ class frmDesempenhoAtivo(FrameMG):
                 self.frmVariacao.temAtivoInicial(ativo)
             self.frmVariacao.Raise()  # Se já existir, apenas traz para frente
 
+    def chama_frmRendaFixa(self, evento):
+        ativo = self.txtAtivo.GetValue()
+        if self.frmRendaFixa is None:  # Se não existir, cria uma nova janela
+            self.frmRendaFixa = FrmRendaFixa()
+            self.frmRendaFixa.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmRendaFixa"))
+            self.frmRendaFixa.Show()
+        else:
+            self.frmRendaFixa.Raise()  # Se já existir, apenas traz para frente
+            
     def chama_frmnegociadoNoDiaNoDia(self, evento):
         if self.frmNegociadoNoDia is None:  # Se não existir, cria uma nova janela
             self.frmNegociadoNoDia = FrmNegociadoNoDia()
