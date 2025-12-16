@@ -57,15 +57,19 @@ class Provento:
         lista = Conta.mc_select_one_by_id(arg)
         if lista:
             self.id_conta = arg
+            self.nome_conta = lista[4]
         else:
             self.id_conta = -1
+            self.nome_conta
 
     def set_nome_conta(self, arg):
         lista = Conta.mc_select_one_by_nome(arg)
         if lista:
             self.id_conta = lista[0]
+            self.nome_conta = lista[4]
         else:
             self.id_conta = -1
+            self.nome_conta = ''
 
     def set_data_recebimento(self, arg):
         self.data_recebimento = devolveDate(arg)
@@ -194,7 +198,7 @@ class Provento:
             else: return None
 
     @staticmethod
-    def sm_busca_por_periodo(data_inicial, id_conta):
+    def sm_busca_por_periodo_conta(data_inicial, id_conta):
         conexao = Provento.getConexao()
         clausulaSql = ''
         if data_inicial is None:
@@ -212,6 +216,32 @@ class Provento:
                            "join tipoprovento as tp on p.idtipoprovento =  tp.id " \
                            "join conta as c on p.idconta = c.id " \
                            "where p.datarecebimento >= '" + str(data_inicial) + "' and p.idconta = " + str(id_conta) + " " \
+                           "order by datarecebimento, id ;"
+        with conexao.cursor() as cursor:
+            cursor.execute(clausulaSql)
+            lista = cursor.fetchall()
+            conexao.close()
+            if lista: return lista
+            else: return None
+
+    @staticmethod
+    def sm_busca_por_periodo_todas_as_contas(data_inicial):
+        conexao = Provento.getConexao()
+        clausulaSql = ''
+        if data_inicial is None:
+            clausulaSql = "SELECT p.id, p.idativo, p.datarecebimento, p.valorbruto, p.valorir, p.pago, p.idtipoprovento, " \
+                           "p.idconta, a.sigla, tp.nometipoprovento, c.nomeconta FROM proventos as p " \
+                           "join ativo as a on p.idativo = a.id " \
+                           "join tipoprovento as tp on p.idtipoprovento =  tp.id " \
+                           "join conta as c on p.idconta = c.id " \
+                           "order by datarecebimento, id"
+        else:
+            clausulaSql = "SELECT p.id, p.idativo, p.datarecebimento, p.valorbruto, p.valorir, p.pago, p.idtipoprovento, " \
+                           "p.idconta, a.sigla, tp.nometipoprovento, c.nomeconta FROM proventos as p " \
+                           "join ativo as a on p.idativo = a.id " \
+                           "join tipoprovento as tp on p.idtipoprovento =  tp.id " \
+                           "join conta as c on p.idconta = c.id " \
+                           "where p.datarecebimento >= '" + str(data_inicial) + "' "\
                            "order by datarecebimento, id ;"
         with conexao.cursor() as cursor:
             cursor.execute(clausulaSql)

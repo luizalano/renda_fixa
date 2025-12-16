@@ -40,12 +40,6 @@ class FrmProvento(FrameMG):
 
         self.setAvancoVertical(8)
 
-        #self.grid = wx.ListCtrl(self.painel, pos=(X, Y), size=(tamX, tamY),
-        #                        style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_HRULES | wx.BORDER_SUNKEN)
-
-        label08, self.cbConta = self.criaCombobox(self.painel, pos=(X, 0), tamanho=22, label='Conta')
-        self.cbConta.Bind(wx.EVT_COMBOBOX, self.conta_selecionada)
-
         self.grid = wx.grid.Grid(self.painel, pos=(X, Y), size=(tamX, tamY))
         self.grid.CreateGrid(0, 9)
         self.grid.SetColSize(0,  50)
@@ -86,11 +80,14 @@ class FrmProvento(FrameMG):
                                                     max=0, multi=False )
         self.txtNomeAtivo.Disable()
 
-        label04, self.txtDataRecebimento = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 2),
+        label08, self.cbConta = self.criaCombobox(self.painel, pos=(x0 + 10, 2), tamanho=22, label='Conta')
+        self.cbConta.Bind(wx.EVT_COMBOBOX, self.conta_selecionada)
+
+        label04, self.txtDataRecebimento = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 3),
                                                            label='Recebido em', tamanho = (12, 1),
                                                            multi=False, tipodate=True)
 
-        label105, self.txtNomeMoeda = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 3),
+        label105, self.txtNomeMoeda = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 4),
                                                     label='Moeda da conta', tamanho = (15, 1),
                                                     max=0, multi=False)
         self.txtNomeMoeda.SetForegroundColour(wx.BLACK)
@@ -98,7 +95,7 @@ class FrmProvento(FrameMG):
         self.txtNomeMoeda.SetEditable(False)
         self.negrita(self.txtNomeMoeda)
 
-        label1055, self.txtValorMoeda = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 4),
+        label1055, self.txtValorMoeda = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 5),
                                                     label='Última cotação', tamanho = (15, 1),
                                                     max=0, multi=False, align='direita')
         self.txtValorMoeda.SetForegroundColour(wx.BLACK)
@@ -106,16 +103,16 @@ class FrmProvento(FrameMG):
         self.txtValorMoeda.SetEditable(False)
         self.negrita(self.txtValorMoeda)
 
-        label05, self.txtValorBruto = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 5),
+        label05, self.txtValorBruto = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 6),
                                                     label='Valor Bruto', tamanho = (15, 1),
                                                     max=0, multi=False, tipofloat=True)
 
-        label06, self.txtValorIr = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 6),
+        label06, self.txtValorIr = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 7),
                                                     label='Valor IR', tamanho = (15, 1),
                                                     max=0, multi=False, tipofloat=True)
 
         
-        label7, self.txtLiquido = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 7),
+        label7, self.txtLiquido = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 8),
                                                     label='Líquido', tamanho = (15, 1),
                                                     max=0, multi=False, readonly = True)
         
@@ -131,12 +128,12 @@ class FrmProvento(FrameMG):
 
         # Criando o RadioBox
         self.rb_Pago = wx.RadioBox(self.painel, label="Status do Pagamento", choices=opcoes, majorDimension=1,
-                                     pos=(self.posx(x0+ 10), self.posy(8)), size=(200, 50), style=wx.RA_SPECIFY_ROWS)
+                                     pos=(self.posx(x0+ 10), self.posy(9)), size=(200, 50), style=wx.RA_SPECIFY_ROWS)
 
-        label07, self.cbTipoProvento = self.criaCombobox(self.painel, pos=(x0 + 10, 9), tamanho=22, label='Provento')
+        label07, self.cbTipoProvento = self.criaCombobox(self.painel, pos=(x0 + 10, 10), tamanho=22, label='Provento')
 
         # Saldo Bancário
-        label885, self.txtSaldoBancario = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 10),
+        label885, self.txtSaldoBancario = self.criaCaixaDeTexto(self.painel, pos=(x0 + 10, 11),
                                                     label='Saldo bancário', tamanho = (15, 1),
                                                     max=0, multi=False, align='direita')
         self.txtSaldoBancario.SetForegroundColour(wx.BLACK)
@@ -173,6 +170,7 @@ class FrmProvento(FrameMG):
         #self.Bind(wx.EVT_CHAR_HOOK, self.teclaPressionada)
 
         self.enche_combo_contas()
+        self.monta_grid(self.dataInicial)
         self.Show()
 
     def indiceCb(self, cb, chave):
@@ -212,7 +210,6 @@ class FrmProvento(FrameMG):
                 else:
                     self.txtNomeMoeda.SetValue('')
                     self.txtValorMoeda.SetValue('')
-            self.monta_grid(self.dataInicial)
         else:
             self.txtNomeMoeda.SetValue('')
             self.txtValorMoeda.SetValue('')
@@ -265,6 +262,7 @@ class FrmProvento(FrameMG):
         self.txtValorIr.Disable()
         self.rb_Pago.Disable()
         self.cbTipoProvento.Disable()
+        self.cbConta.Disable()
 
         self.botaoSalva.Disable()
         self.botaoDelete.Disable()
@@ -291,8 +289,7 @@ class FrmProvento(FrameMG):
             self.monta_grid(self.dataInicial)
 
     def monta_grid(self, dataInicial):
-        #self.lista = self.provento.getAll()
-        self.lista = Provento.sm_busca_por_periodo(dataInicial, self.id_conta)
+        self.lista = Provento.sm_busca_por_periodo_todas_as_contas(dataInicial)
         self.grid.ClearGrid()
         self.total_proventos = zero
         self.total_pendente = zero
@@ -375,6 +372,9 @@ class FrmProvento(FrameMG):
             self.txtValorIr.SetValue(str(self.provento.valor_ir))
 
             self.cbTipoProvento.SetSelection(self.indiceCb(self.cbTipoProvento, self.provento.nome_provento))
+            self.cbConta.SetSelection(self.indiceCb(self.cbConta, self.provento.nome_conta))
+
+            
 
             if self.provento.pago:
                 self.rb_Pago.SetSelection(0)  # Seleciona "Pago"
@@ -389,7 +389,7 @@ class FrmProvento(FrameMG):
             self.txtValorIr.Enable()
             self.rb_Pago.Enable()
             self.cbTipoProvento.Enable()
-            #self.cbConta.Enable()
+            self.cbConta.Enable()
 
             self.botaoSalva.Enable()
             self.botaoDelete.Enable()
