@@ -130,7 +130,7 @@ class RendaFixa:
         try:
             with self.conexao.cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO rendafixa (datalancamento, valor, descricao, idtitulorendafixa, idconta, alterasaldobancario, tipolancamento) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO rendafixa (datalancamento, valor, descricao, idtitulorendafixa, idconta, alterasaldobancario, tipolancamento) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (self.data_lancamento, self.valor, self.descricao, self.id_titulo_renda_fixa, self.id_conta, self.altera_saldo_bancario, self.tipo_lancamento),
                 )
                 self.id = cursor.fetchone()[0]

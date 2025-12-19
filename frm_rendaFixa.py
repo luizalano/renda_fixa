@@ -30,7 +30,7 @@ class FrmRendaFixa(FrameMG):
         self.rendaFixa = RendaFixa()
         self.frmTituloRendaFixa = None
 
-        super(FrmRendaFixa, self).__init__(pai=None, titulo='Renda Fixa - Desempenho de ativo - CONTA NÃO DEFINIDA AINDA', lar = 1370, alt = 720,
+        super(FrmRendaFixa, self).__init__(pai=None, titulo='Renda Fixa - Lançamentos por título', lar = 1370, alt = 720,
                                          xibot = 650, split=False)
 
         self.criaComponentes()

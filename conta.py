@@ -213,8 +213,8 @@ class Conta:
                           '), ' \
                           'rendafixa AS ( ' \
                           'SELECT ' \
-                             'COALESCE(SUM(CASE WHEN valor > 1 THEN valor ELSE 0 END), 0) AS investimento, ' \
-                             'COALESCE(SUM(CASE WHEN valor = 2 THEN valor ELSE 0 END), 0) AS resgate ' \
+                             'COALESCE(SUM(CASE WHEN valor > 0 THEN valor ELSE 0 END), 0) AS investimento, ' \
+                             'COALESCE(SUM(CASE WHEN valor < 0 THEN valor * (-1) ELSE 0 END), 0) AS resgate ' \
                           'FROM rendafixa where alterasaldobancario = true and idconta = %s' \
                           ') ' \
                           'SELECT ' \
@@ -251,8 +251,8 @@ class Conta:
                           '), ' \
                           'rendafixa AS ( ' \
                           'SELECT ' \
-                             'COALESCE(SUM(CASE WHEN valor > 1 THEN valor ELSE 0 END), 0) AS investimento, ' \
-                             'COALESCE(SUM(CASE WHEN valor = 2 THEN valor ELSE 0 END), 0) AS resgate ' \
+                             'COALESCE(SUM(CASE WHEN valor > 0 THEN valor ELSE 0 END), 0) AS investimento, ' \
+                             'COALESCE(SUM(CASE WHEN valor < 0 THEN valor * (-1) ELSE 0 END), 0) AS resgate ' \
                           'FROM rendafixa where alterasaldobancario = true and idconta = %s' \
                           ') ' \
                           'SELECT ' \
@@ -268,6 +268,7 @@ class Conta:
                 return None
 
         self.con.close()
+
     @staticmethod
     def mc_busca_contas_e_ultimacotacao():
         # 
