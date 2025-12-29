@@ -593,12 +593,13 @@ class frmDesempenhoAtivo(FrameMG):
 
     def gridProventos(self, lista):
 
-        self.totalProventos = Decimal('0.0')
-        resultado = Decimal('0.0')
+        self.totalProventos = zero
+        resultado = zero
 
         for row in lista:
             dataOperacao = devolveDateStr(row[1])
-            valorOperacao = devolve_float_de_formatacao_completa(row[2])
+            #valorOperacao = devolve_float_de_formatacao_completa(row[2])
+            valorOperacao = row[2]
             foiPago = row[4]
             tipoProvento = row[3]
             linha = self.contador
@@ -625,10 +626,10 @@ class frmDesempenhoAtivo(FrameMG):
             if foiPago: self.totalProventos += valorOperacao
 
         self.totalGeral = self.totalProventos + self.totalResultado
-        if self.totalComprado > 0.0:
+        if self.totalComprado > 0:
             self.totalRendimento = (self.totalGeral / self.totalComprado) * cem
         else:
-            self.totalRendimento = Decimal('0.0')
+            self.totalRendimento = zero
         self.txtProventos.SetValue(formata_numero(self.totalProventos))
         self.txtTotalGeral.SetValue(formata_numero(self.totalGeral))
         self.txtResultadoGeral.SetValue(formata_numero(self.totalRendimento) + ' %')
