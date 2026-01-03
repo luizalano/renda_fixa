@@ -69,11 +69,11 @@ class FrmDespesa(FrameMG):
         label01, self.txtId = self.criaCaixaDeTexto(self.painel, pos=(x0, 0), label='ID', tamanho = (6, 1),
                                                     max=6, multi=False )
         label02, self.txtDataLancamento = self.criaCaixaDeTexto(self.painel, pos=(x0, 1),
-                                                    label='Data', tamanho = (15, 1),
+                                                    label='Data do lançamento', tamanho = (15, 1),
                                                     max=0, multi=False, tipodate=True )
 
         label0201, self.txtDataEfetivacao = self.criaCaixaDeTexto(self.painel, pos=(x0 + 23, 1),
-                                                    label='Data', tamanho = (15, 1),
+                                                    label='Data da efetivação', tamanho = (15, 1),
                                                     max=0, multi=False, tipodate=True )
 
         label02nota, self.txtNotaNegociacao = self.criaCaixaDeTexto(self.painel, pos=(x0, 2),
