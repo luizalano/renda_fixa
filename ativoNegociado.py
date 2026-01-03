@@ -443,24 +443,13 @@ class AtivoNegociado():
         return lan
 
     @staticmethod
-    def insere_numero_nota_negociaco(id, numero_nota, data_operacao, id_conta):
+    def insere_numero_nota_negociaco(numero_nota, data_operacao, id_conta):
         conexao = AtivoNegociado.getConexao()
         with conexao.cursor() as cursor:
-            cursor.execute("update ativonegociado set idnotanegociacao = %s where dataoperacao = %s and idconta = %s and idativo <> 10642", (id, data_operacao, id_conta))
+            cursor.execute("update ativonegociado set notanegociacao = %s where dataoperacao = %s and idconta = %s and idativo <> 10642", (numero_nota, data_operacao, id_conta))
             row = cursor.fetchone()
             conexao.close()
             if row: return row[0]
             else: return None
 
 
-
-def main():
-    ativo = Ativo()
-    ativo.populaAtivoBySigla('VALE3')
-    print(ativo.getsigla())
-
-    print('acabou')
-
-
-if __name__ == '__main__':
-    main()

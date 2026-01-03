@@ -150,7 +150,7 @@ class Despesas():
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
-        self.notaNegociacao.criaNotaNegociao(self.numero_nota, self.data_lancamento, self.id_conta)
+        self.notaNegociacao.criaNotaNegociao(self.numero_nota, self.data_lancamento, self.id_conta, self.data_efetivacao)
 
         clausulaSql = 'insert into despesas (datalancamento, descricao, valor, idconta, idtipodespesa, numeronota, dataefetivacao) values (%s, %s, %s, %s, %s, %s) returning id'
 
