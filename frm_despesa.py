@@ -72,18 +72,22 @@ class FrmDespesa(FrameMG):
                                                     label='Data', tamanho = (15, 1),
                                                     max=0, multi=False, tipodate=True )
 
-        label02nota, self.txtNotaNegociacao = self.criaCaixaDeTexto(self.painel, pos=(x0+23, 1),
+        label0201, self.txtDataEfetivacao = self.criaCaixaDeTexto(self.painel, pos=(x0 + 23, 1),
+                                                    label='Data', tamanho = (15, 1),
+                                                    max=0, multi=False, tipodate=True )
+
+        label02nota, self.txtNotaNegociacao = self.criaCaixaDeTexto(self.painel, pos=(x0, 2),
                                                     label='Nota de Negociação', tamanho = (17, 1),
                                                     max=0, multi=False)
 
-        label0844, self.cbTipoDespesa = self.criaCombobox(self.painel, pos=(x0, 2), tamanho=40, label='Tipo de despesa')
+        label0844, self.cbTipoDespesa = self.criaCombobox(self.painel, pos=(x0, 3), tamanho=40, label='Tipo de despesa')
         self.cbTipoDespesa.Bind(wx.EVT_COMBOBOX, self.tipoDespesaSelecionada)
         
-        label03, self.txtDescricao = self.criaCaixaDeTexto(self.painel, pos=(x0, 3),
+        label03, self.txtDescricao = self.criaCaixaDeTexto(self.painel, pos=(x0, 4),
                                                     label='Descrição', tamanho = (40, 1),
                                                     max=self.despesas.sql_busca_tamanho('descricao'), multi=False )
 
-        label105, self.txtNomeMoeda = self.criaCaixaDeTexto(self.painel, pos=(x0, 4),
+        label105, self.txtNomeMoeda = self.criaCaixaDeTexto(self.painel, pos=(x0, 5),
                                                     label='Moeda da conta', tamanho = (15, 1),
                                                     max=0, multi=False)
         self.txtNomeMoeda.SetForegroundColour(wx.BLACK)
@@ -91,7 +95,7 @@ class FrmDespesa(FrameMG):
         self.txtNomeMoeda.SetEditable(False)
         self.negrita(self.txtNomeMoeda)
 
-        label1055, self.txtValorMoeda = self.criaCaixaDeTexto(self.painel, pos=(x0, 5),
+        label1055, self.txtValorMoeda = self.criaCaixaDeTexto(self.painel, pos=(x0 + 23, 5),
                                                     label='Última cotação', tamanho = (15, 1),
                                                     max=0, multi=False, align='direita')
         self.txtValorMoeda.SetForegroundColour(wx.BLACK)
@@ -254,15 +258,14 @@ class FrmDespesa(FrameMG):
         self.id_tipo_despesa = -1
         if lista:
             self.id_tipo_despesa = lista[0]
-            self.txtDescricao.SetValue(nomeTipoDespesa.title())
+            if self.txtDescricao.GetValue().strip() == '':
+                self.txtDescricao.SetValue(nomeTipoDespesa.title())
 
     def limpaElementos(self):
         self.despesas.clear_despesas()
 
         self.txtId.Clear()
         self.txtDescricao.Clear()
-        #self.txtDataLancamento.Clear()
-        #self.txtNotaNegociacao.Clear()
         self.txtValor.Clear()
 
         self.disabilitaComponentes()
@@ -271,6 +274,7 @@ class FrmDespesa(FrameMG):
         self.txtId.Disable()
         self.txtDescricao.Disable()
         self.txtDataLancamento.Disable()
+        self.txtDataEfetivacao.Disable()
         self.txtNotaNegociacao.Disable()
         self.txtValor.Disable()
 
@@ -333,6 +337,9 @@ class FrmDespesa(FrameMG):
             data_formatada = datetime.strptime(data_str, '%d/%m/%Y').date()
             self.txtDataLancamento.SetValue(data_formatada)
 
+            data_str = self.despesas.data_efetivacao.strftime('%d/%m/%Y')
+            data_formatada = datetime.strptime(data_str, '%d/%m/%Y').date()
+            self.txtDataEfetivacao.SetValue(data_formatada)
 
             self.txtValor.SetValue(str(self.despesas.valor))
 
@@ -341,6 +348,7 @@ class FrmDespesa(FrameMG):
             self.txtDescricao.Enable()
             self.txtNotaNegociacao.Enable()
             self.txtDataLancamento.Enable()
+            self.txtDataEfetivacao.Enable()
             self.txtValor.Enable()
 
             self.botaoSalva.Enable()
@@ -357,6 +365,7 @@ class FrmDespesa(FrameMG):
             self.txtDescricao.Enable()
             self.txtNotaNegociacao.Enable()
             self.txtDataLancamento.Enable()
+            self.txtDataEfetivacao.Enable()
             self.txtValor.Enable()
 
             self.insert = True
@@ -371,6 +380,7 @@ class FrmDespesa(FrameMG):
 
     def salva_elemento(self, event):
         self.despesas.set_data_lancamento(self.txtDataLancamento.GetValue().Format('%d/%m/%Y'))
+        self.despesas.set_data_efetivacao(self.txtDataEfetivacao.GetValue().Format('%d/%m/%Y'))
         self.despesas.set_descricao(self.txtDescricao.Value)
         self.despesas.set_numero_nota(self.txtNotaNegociacao.Value)
         self.despesas.set_valor(devolve_float(str(self.txtValor.Value)))

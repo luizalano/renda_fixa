@@ -5,16 +5,19 @@ from diversos import *
 from conta import Conta
 from databasefunctions import *
 from tipodespesa import TipoDespesa
+from notanegociacao import NotaNegociacao
 import psycopg2
 
 class Despesas():
     id = 0
     data_lancamento = None
+    data_efetivacao = None
     descricao = ''
     numero_nota = ''
     valor = 0.0
     id_conta = -1
     id_tipo_despesa = -1
+    notaNegociacao = NotaNegociacao() 
 
     def __init__(self):
         self.tam_descricao = 0
@@ -40,7 +43,7 @@ class Despesas():
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
-        clausulaSql = 'select id, datalancamento, descricao, valor, idconta, idtipodespesa, nuneronota ' \
+        clausulaSql = 'select id, datalancamento, descricao, valor, idconta, idtipodespesa, numeronota, dataefetivacao ' \
                       'from despesas ' \
                       'order by datalancamento;'
 
@@ -63,12 +66,13 @@ class Despesas():
         self.set_descricao('')
         self.set_numero_nota('')
         self.set_data_lancamento(None)
+        self.set_data_efetivacao(None)
         self.set_valor(0.0)
         self.set_id_conta(-1)
         self.set_id_tipo_despesa(-1)
 
     def popula_despesas_by_id(self, arg):
-        clausulaSql = 'select id, datalancamento, descricao, valor, idconta, idtipodespesa, numeronota ' \
+        clausulaSql = 'select id, datalancamento, descricao, valor, idconta, idtipodespesa, numeronota, dataefetivacao ' \
                       'from despesas ' \
                       'where id = ' + str(arg) + ' order by datalancamento;'
 
@@ -91,6 +95,7 @@ class Despesas():
             self.set_id_conta(row[4])
             self.set_id_tipo_despesa(row[5])
             self.set_numero_nota(row[6])
+            self.set_data_efetivacao(row[7])
 
         self.conexao.close()
 
@@ -107,6 +112,8 @@ class Despesas():
         self.numero_nota = arg[0:self.tam_numero_nota]
     def set_data_lancamento(self, arg):
         self.data_lancamento = devolveDate(arg)
+    def set_data_efetivacao(self, arg):
+        self.data_efetivacao = devolveDate(arg)
     def set_valor(self, arg):
         self.valor = devolve_float_de_formatacao_completa(arg)
     def set_id_conta(self, arg):
@@ -140,14 +147,16 @@ class Despesas():
             return 0
 
     def insere(self):
-        clausulaSql = 'insert into despesas (datalancamento, descricao, valor, idconta, idtipodespesa, numeronota) values (%s, %s, %s, %s, %s, %s)'
-
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
+        self.notaNegociacao.criaNotaNegociao(self.numero_nota, self.data_lancamento, self.id_conta)
+
+        clausulaSql = 'insert into despesas (datalancamento, descricao, valor, idconta, idtipodespesa, numeronota, dataefetivacao) values (%s, %s, %s, %s, %s, %s) returning id'
+
         try:
             cursor.execute(clausulaSql, 
-                           (self.data_lancamento, self.descricao, self.valor, self.id_conta, self.id_tipo_despesa, self.numero_nota))
+                           (self.data_lancamento, self.descricao, self.valor, self.id_conta, self.id_tipo_despesa, self.numero_nota, self.data_efetivacao))
             self.conexao.commit()
         except  Exception as e:
             dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao inserir despesa', wx.OK | wx.ICON_ERROR)
@@ -156,22 +165,31 @@ class Despesas():
             self.conexao.close()
 
     def update(self):
-        clausulaSql = 'update despesas set '
+        clausulaSql = 'update despesas set ' \
+                      'descricao = %s, ' \
+                      'numeronota = %s, ' \
+                      'datalancamento = %s, ' \
+                      'dataefetivacao = %s, ' \
+                      'idconta = %s, ' \
+                      'idtipodespesa = %s, ' \
+                      'valor = %s ' \
+                      'where id = %s'
 
-        clausulaSql += "descricao = '" + tiraAspas(self.descricao) + "', "
-        clausulaSql += "numeronota = '" + tiraAspas(self.numero_nota) + "', "
-        clausulaSql += "id = " + str(self.id) + ", "
-        clausulaSql += "datalancamento = '" + str(self.data_lancamento) + "', "
-        clausulaSql += "idconta = " + str(self.id_conta) + ", "
-        clausulaSql += "idtipodespesa = " + str(self.id_tipo_despesa) + ", "
-        clausulaSql += "valor = " + str(self.valor) + " "
-        clausulaSql += "where id = " + str(self.id) + ";"
+        #clausulaSql += "descricao = '" + tiraAspas(self.descricao) + "', "
+        #clausulaSql += "numeronota = '" + tiraAspas(self.numero_nota) + "', "
+        #clausulaSql += "id = " + str(self.id) + ", "
+        #clausulaSql += "datalancamento = '" + str(self.data_lancamento) + "', "
+        #clausulaSql += "dataefetivacao = '" + str(self.data_efetivacao) + "', "
+        #clausulaSql += "idconta = " + str(self.id_conta) + ", "
+        #clausulaSql += "idtipodespesa = " + str(self.id_tipo_despesa) + ", "
+        #clausulaSql += "valor = " + str(self.valor) + " "
+        #clausulaSql += "where id = " + str(self.id) + ";"
 
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()  
 
         try:
-            cursor.execute(clausulaSql)
+            cursor.execute(clausulaSql,(self.descricao, self.numero_nota, self.data_lancamento, self.data_efetivacao, self.id_conta, self.id_tipo_despesa, self.valor, self.id))
             self.conexao.commit()
         except  Exception as e:
             dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao atualizar despesa <' + self.id + '>', wx.OK | wx.ICON_ERROR)
@@ -198,11 +216,11 @@ class Despesas():
         cursor = conexao.cursor()   
         clausulaSql = ''
         if arg is None:
-            clausulaSql = 'select id, datalancamento, descricao, valor, dataehorainsert, idconta, numeronota ' \
+            clausulaSql = 'select id, datalancamento, descricao, valor, dataehorainsert, idconta, numeronota, dataefetivacao ' \
                       'from despesas where idconta = ' + str(idconta) + ' ' \
                       'order by datalancamento, dataehorainsert;'
         else:
-            clausulaSql = 'select id, datalancamento, descricao, valor, dataehorainsert, idconta, numeronota ' \
+            clausulaSql = 'select id, datalancamento, descricao, valor, dataehorainsert, idconta, numeronota, dataefetivacao ' \
                       'from despesas ' \
                       'where datalancamento >= \'' + str(arg) + '\' and idconta = ' + str(idconta) + ' ' \
                       'order by datalancamento, dataehorainsert;'
