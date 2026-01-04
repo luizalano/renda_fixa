@@ -443,6 +443,26 @@ class AtivoNegociado():
         return lan
 
     @staticmethod
+    def mc_devolve_lancamentos_ativo__por_nota(nota, idconta):
+        conexao = AtivoNegociado.getConexao()
+        cursor = conexao.cursor()
+        clausulaSql = 'select a.sigla, an.operacao, an.qtdeoperacao, an.valoroperacao, an.dataoperacao, an.ordemdia, an.id  ' \
+                      'from ativonegociado as an join ativo as a on an.idativo = a.id ' \
+                      'where an.numeronota = %s and an.idconta = %s ' \
+                      'order by an.dataoperacao, an.ordemdia, an.id;'
+        try:
+            cursor.execute(clausulaSql, (nota, idconta))
+        except  Exception as e:
+            dlg = wx.MessageDialog(None, clausulaSql + '\n' + str(e), 'Erro ao ler ativos negociados', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+
+        lan = cursor.fetchall()
+
+        conexao.close()
+
+        return lan
+
+    @staticmethod
     def insere_numero_nota_negociaco(numero_nota, data_operacao, id_conta):
         conexao = AtivoNegociado.getConexao()
         with conexao.cursor() as cursor:

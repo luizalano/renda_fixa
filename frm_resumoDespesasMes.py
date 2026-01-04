@@ -4,7 +4,7 @@ from wx import *
 import wx.grid as gridlib
 from datetime import datetime
 from collections import defaultdict
-from despesa import Despesas
+from despesa import Despesa
 from diversos import *
 
 class FrmResumoDespesasMes(wx.Frame):
@@ -66,7 +66,7 @@ class FrmResumoDespesasMes(wx.Frame):
             wx.MessageBox(f"Entre com o mês e ano corretamente!", "Erro", wx.OK | wx.ICON_ERROR)
 
     def carregar_dados(self, mes, ano):
-        resultados = Despesas.mc_busca_despesas_por_mes_ano(mes, ano)   
+        resultados = Despesa.mc_busca_despesas_por_mes_ano(mes, ano)   
         if resultados:
             dados = defaultdict(dict)
             todas_despesas = set()

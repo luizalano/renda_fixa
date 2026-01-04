@@ -1,5 +1,6 @@
 # coding: utf-8
 from ativoNegociado import AtivoNegociado
+from conta import Conta
 from databasefunctions import *
 from diversos import *
 
@@ -108,7 +109,20 @@ class NotaNegociacao:
             AtivoNegociado().insere_numero_nota_negociaco(numero_nota, data_operacao, id_conta)
 
     @staticmethod
-    def saldo_por_nota(idconta):
+    def mc_busca_todas(dias):
+        conexao = NotaNegociacao.getConexao()
+
+        with conexao.cursor() as cursor:
+            clausulaSql = "select n.numeronota, n.dataoperacao, n.idconta, n.dataefetivacao " \
+                          "from notanegociacao as n join conta as c on c.id = n.idconta " \
+                          "where n.dataoperacao >= current_date - interval '%s days'"
+            cursor.execute(clausulaSql, (dias,))
+            resultado = cursor.fetchall()
+            conexao.close()
+            return resultado
+
+    @staticmethod
+    def mc_saldo_por_nota(idconta):
         conexao = NotaNegociacao.getConexao()
         with conexao.cursor() as cursor:
             clausulaSql = "WITH operacoes AS (SELECT numeronota, idconta, " \
@@ -129,11 +143,40 @@ class NotaNegociacao:
             conexao.close()
             return resultado
 
+    @staticmethod
+    def mc_saldo_da_nota(conta, nota):
+        conexao = NotaNegociacao.getConexao()
+
+        lista = Conta.mc_select_one_by_nome(conta)
+        if len(lista) == 0:
+            conexao.close()
+            return None
+        idconta = lista[0]
+        with conexao.cursor() as cursor:
+            clausulaSql = "WITH operacoes AS (SELECT numeronota, idconta, " \
+                          "    SUM(CASE operacao WHEN 1 THEN qtdeoperacao * valoroperacao * -1" \
+                          "                      WHEN 2 THEN qtdeoperacao * valoroperacao ELSE 0" \
+                          "            END) AS total_operacoes" \
+                          "    FROM ativonegociado WHERE numeronota IS NOT NULL GROUP BY numeronota, idconta), " \
+                          "despesas_nota AS (SELECT numeronota, idconta, SUM(valor * -1) AS total_despesas " \
+                          "    FROM despesas WHERE numeronota IS NOT NULL GROUP BY numeronota, idconta) " \
+                          "SELECT nn.numeronota, nn.dataefetivacao, nn.dataoperacao, " \
+                          "      COALESCE(o.total_operacoes, 0) " \
+                          "    + COALESCE(d.total_despesas, 0) AS valorliquido " \
+                          "FROM notanegociacao nn LEFT JOIN operacoes o ON o.numeronota = nn.numeronota AND o.idconta = nn.idconta " \
+                          "LEFT JOIN despesas_nota d ON d.numeronota = nn.numeronota AND d.idconta = nn.idconta " \
+                          "WHERE nn.idconta = %s and nn.numeronota = %s ORDER BY nn.dataoperacao, nn.numeronota;"
+            cursor.execute(clausulaSql, (idconta, nota))
+            resultado = cursor.fetchone()
+            conexao.close()
+            return resultado[3]
+
 def main():
-    resultado = NotaNegociacao.saldo_por_nota(12)
+    resultado = NotaNegociacao.mc_saldo_por_nota(12)
     for row in resultado:
         print(row)
-
+    saldo = NotaNegociacao.mc_saldo_da_nota('XP - Neovalor', '126963194')
+    print(saldo)
 
 if __name__ == '__main__':
     main()

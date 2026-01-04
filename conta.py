@@ -167,7 +167,7 @@ class Conta:
         #with self.conexao.cursor as cursor:
         cursor.execute("SELECT c.id, c.numerobanco, c.numeroagencia, c.iban, c.nomeconta, c.numeroconta, "
                        "c.digitoconta, c.idmoeda, m.nomemoeda "
-                       "FROM conta as c join moeda as m on m.id = c.idmoeda WHERE c.nomeconta = %s", (nome,))
+                       "FROM conta as c join moeda as m on m.id = c.idmoeda WHERE upper(c.nomeconta) = upper(%s)", (nome,))
         lista = cursor.fetchone()
         if lista:
             return lista

@@ -1,4 +1,5 @@
 # coding: utf-8
+from frm_notaNegociacao import FrmNotaNegociacao
 from frm_radar import *
 from frm_rendaTotal import *
 from frm_variacao import *
@@ -50,6 +51,7 @@ class frmDesempenhoAtivo(FrameMG):
         self.frmVariacao = None
         self.leRadarB3 = None
         self.frmRendaFixa = None
+        self.frmNotaNegociacao = None
 
         self.idBolsa = None
         self.idConta = None
@@ -230,13 +232,19 @@ class frmDesempenhoAtivo(FrameMG):
 
         self.iconeRendaFixa = wx.Bitmap(self.caminho + 'Cofre-32x32.png')
         lb, ab = self.iconeRendaFixa.GetSize()
-        self.botaoRendaFixa = wx.BitmapButton(self.painel, id=132, bitmap=self.iconeRendaFixa, pos=(1100, 620))
+        self.botaoRendaFixa = wx.BitmapButton(self.painel, id=132, bitmap=self.iconeRendaFixa, pos=(1100, 595))
         self.Bind(wx.EVT_BUTTON, self.chama_frmRendaFixa, self.botaoRendaFixa)
         self.botaoRendaFixa.SetToolTip("Renda Fixa")
 
+        self.iconeNota = wx.Bitmap(self.caminho + 'invoice32.png')
+        lb, ab = self.iconeNota.GetSize()
+        self.botaoNota = wx.BitmapButton(self.painel, id=8572, bitmap=self.iconeNota, pos=(1150, 597))
+        self.Bind(wx.EVT_BUTTON, self.chamaNota, self.botaoNota)
+        self.botaoNota.SetToolTip("Confere as notas de negociação")
+
         self.iconeVariacao = wx.Bitmap(self.caminho + 'stock-exchange-32.png')
         lb, ab = self.iconeVariacao.GetSize()
-        self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(1150, 620))
+        self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(1150, 640))
         self.Bind(wx.EVT_BUTTON, self.chama_frmvariacao, self.botaoVariacao)
         self.botaoVariacao.SetToolTip("Grafico da variação diária de ativos")
 
@@ -357,6 +365,15 @@ class frmDesempenhoAtivo(FrameMG):
 
         dlg.Destroy()
 
+    def chamaNota(self, evento):
+        if self.frmNotaNegociacao is None:  # Se não existir, cria uma nova janela
+            self.frmNotaNegociacao = FrmNotaNegociacao()
+            self.frmNotaNegociacao.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmNotaNegociacao"))
+            self.frmNotaNegociacao.Show()
+        else:
+            self.frmNotaNegociacao.Raise()  # Se já existir, apenas traz para frente
+
+    
     def chama_frmvariacao(self, evento):
         ativo = self.txtAtivo.GetValue()
         if self.frmVariacao is None:  # Se não existir, cria uma nova janela

@@ -2,12 +2,13 @@
 from wx import Button, ID_ANY
 
 from diversos import *
-from despesa import Despesas
+from despesa import Despesa
 from cotacao import Cotacao
 from conta import Conta
 from wxFrameMG import FrameMG
 from frm_resumoDespesas import FrmResumoDespesas
 from frm_resumoDespesasMes import FrmResumoDespesasMes
+from frm_notaNegociacao import FrmNotaNegociacao
 
 import wx
 import wx.grid
@@ -22,9 +23,10 @@ class FrmDespesa(FrameMG):
     listaFase = []
     frmResumoDespesas = None
     frmResumoDespesasMes = None
+    frmNotaNegociacao = None
 
     def __init__(self, idContaInicial):
-        self.despesas = Despesas()
+        self.despesas = Despesa()
         self.today = datetime.now().date()
 
         super(FrmDespesa, self).__init__(pai=None, titulo='Despesas - Corretagem e outras despesas de operações',
@@ -79,6 +81,12 @@ class FrmDespesa(FrameMG):
         label02nota, self.txtNotaNegociacao = self.criaCaixaDeTexto(self.painel, pos=(x0, 2),
                                                     label='Nota de Negociação', tamanho = (17, 1),
                                                     max=0, multi=False)
+
+        self.iconeNota = wx.Bitmap(self.caminho + 'invoice32.png')
+        lb, ab = self.iconeNota.GetSize()
+        self.botaoNota = wx.BitmapButton(self.painel, id=8572, bitmap=self.iconeNota, pos=(self.posx(x0 + 20), self.posy(2)))
+        self.Bind(wx.EVT_BUTTON, self.chamaNota, self.botaoNota)
+        self.botaoNota.SetToolTip("Confere as notas de negociação")
 
         label0844, self.cbTipoDespesa = self.criaCombobox(self.painel, pos=(x0, 3), tamanho=40, label='Tipo de despesa')
         self.cbTipoDespesa.Bind(wx.EVT_COMBOBOX, self.tipoDespesaSelecionada)
@@ -164,13 +172,20 @@ class FrmDespesa(FrameMG):
         self.Show()
 
     def chamaResumo(self, evento):
-
-        if self.frmResumoDespesas is None:  # Se não existir, cria uma nova janela
-            self.frmResumoDespesas = FrmResumoDespesas(id_conta=self.idConta)
-            self.frmResumoDespesas.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmResumoDespesas"))
-            self.frmResumoDespesas.Show()
+        if self.frmNotaNegociacao is None:  # Se não existir, cria uma nova janela
+            self.frmNotaNegociacao = FrmNotaNegociacao(idContaInicial=self.idConta)
+            self.frmNotaNegociacao.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmNotaNegociacao"))
+            self.frmNotaNegociacao.Show()
         else:
-            self.frmResumoDespesas.Raise()  # Se já existir, apenas traz para frente
+            self.frmNotaNegociacao.Raise()  # Se já existir, apenas traz para frente
+
+    def chamaNota(self, evento):
+        if self.frmNotaNegociacao is None:  # Se não existir, cria uma nova janela
+            self.frmNotaNegociacao = FrmNotaNegociacao()
+            self.frmNotaNegociacao.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmNotaNegociacao"))
+            self.frmNotaNegociacao.Show()
+        else:
+            self.frmNotaNegociacao.Raise()  # Se já existir, apenas traz para frente
 
     def chamaResumoMes(self, evento):
 
@@ -195,7 +210,7 @@ class FrmDespesa(FrameMG):
             self.cbConta.Append(row[4])
 
     def encheComboTipoDespesa(self):
-        lista = Despesas.mc_busca_tipos()
+        lista = Despesa.mc_busca_tipos()
         self.cbTipoDespesa.Clear()
         for row in lista:
             self.cbTipoDespesa.Append(row[1])
@@ -246,7 +261,7 @@ class FrmDespesa(FrameMG):
             self.txtValorMoeda.SetValue('')
 
     def setTipoDespesa(self, idTipoDespesa):
-        lista = Despesas.mc_busca_tipo_por_id(idTipoDespesa)
+        lista = Despesa.mc_busca_tipo_por_id(idTipoDespesa)
         if lista:
             self.cbTipoDespesa.SetSelection(self.indiceCb(self.cbTipoDespesa, lista[1]))
             self.tipoDespesaSelecionada(None)
@@ -254,7 +269,7 @@ class FrmDespesa(FrameMG):
     def tipoDespesaSelecionada(self, event):
         nomeTipoDespesa = self.cbTipoDespesa.GetStringSelection()
         lista = None
-        lista = Despesas.mc_busca_tipo_por_nome(nomeTipoDespesa)
+        lista = Despesa.mc_busca_tipo_por_nome(nomeTipoDespesa)
         self.id_tipo_despesa = -1
         if lista:
             self.id_tipo_despesa = lista[0]
@@ -291,7 +306,7 @@ class FrmDespesa(FrameMG):
             self.montaGrid(self.dataInicial)
 
     def montaGrid(self, arg):
-        self.lista = Despesas.mc_busca_por_periodo(arg, self.idConta)
+        self.lista = Despesa.mc_busca_por_periodo(arg, self.idConta)
 
         self.grid.ClearGrid()
         if self.grid.GetNumberRows() > 0:

@@ -8,7 +8,7 @@ from tipodespesa import TipoDespesa
 from notanegociacao import NotaNegociacao
 import psycopg2
 
-class Despesas():
+class Despesa():
     id = 0
     data_lancamento = None
     data_efetivacao = None
@@ -212,7 +212,7 @@ class Despesas():
 
     @staticmethod
     def mc_busca_por_periodo(arg, idconta):
-        conexao = Despesas.getConexao() 
+        conexao = Despesa.getConexao() 
         cursor = conexao.cursor()   
         clausulaSql = ''
         if arg is None:
@@ -236,7 +236,7 @@ class Despesas():
 
     @staticmethod
     def mc_busca_tipos():
-        conexao = Despesas.getConexao() 
+        conexao = Despesa.getConexao() 
         cursor = conexao.cursor()
         
         clausulaSql = 'select id, nomedespesa from tipodespesa order by nomedespesa;'        
@@ -252,7 +252,7 @@ class Despesas():
 
     @staticmethod
     def mc_busca_tipo_por_nome(arg):
-        conexao = Despesas.getConexao() 
+        conexao = Despesa.getConexao() 
         cursor = conexao.cursor()
         
         clausulaSql = 'select id, nomedespesa from tipodespesa where nomedespesa = %s;'         
@@ -269,7 +269,7 @@ class Despesas():
 
     @staticmethod
     def mc_busca_tipo_por_id(arg):
-        conexao = Despesas.getConexao() 
+        conexao = Despesa.getConexao() 
         cursor = conexao.cursor()
         
         clausulaSql = 'select id, nomedespesa from tipodespesa where id = ' + str(arg) + ';'         
@@ -287,7 +287,7 @@ class Despesas():
     @staticmethod
     def mc_busca_todas_despesas_por_mes():
         try:
-            conn = Despesas.getConexao()
+            conn = Despesa.getConexao()
             cursor = conn.cursor()
 
             consulta = '''
@@ -315,7 +315,7 @@ class Despesas():
     @staticmethod
     def mc_busca_despesas_por_mes_ano(mes, ano):
         try:
-            conn = Despesas.getConexao()
+            conn = Despesa.getConexao()
             cursor = conn.cursor()
             
             consulta = '''
@@ -338,11 +338,27 @@ class Despesas():
         
     @staticmethod
     def mc_busca_despesas_por_conta(idconta):
-        conexao = Despesas.getConexao()
+        conexao = Despesa.getConexao()
         cursor = conexao.cursor()
 
         try:
             cursor.execute("select datalancamento, valor from despesas where idconta = %s order by datalancamento ;", (idconta,))
+        except  Exception as e:
+            dlg = wx.MessageDialog(None, str(e), 'Erro ao ler despesas!', wx.OK | wx.ICON_ERROR)
+            result = dlg.ShowModal()
+
+        lista =  cursor.fetchall()
+        conexao.close()
+
+        return lista
+
+    @staticmethod
+    def mc_busca_despesas_por_nota(nota, idconta):
+        conexao = Despesa.getConexao()
+        cursor = conexao.cursor()
+
+        try:
+            cursor.execute("select descricao, valor, id from despesas where idconta = %s and numeronota = %s order by id ;", (idconta, nota))
         except  Exception as e:
             dlg = wx.MessageDialog(None, str(e), 'Erro ao ler despesas!', wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()

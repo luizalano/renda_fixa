@@ -6,7 +6,7 @@ from datetime import datetime
 from collections import defaultdict
 from databasefunctions import ConectaBD
 from diversos import *
-from despesa import Despesas
+from despesa import Despesa
 
 class FrmResumoDespesas(wx.Frame):
     def __init__(self, id_conta):
@@ -37,7 +37,7 @@ class FrmResumoDespesas(wx.Frame):
             return False
 
     def carregar_dados(self):
-        resultados = Despesas.mc_busca_todas_despesas_por_mes()
+        resultados = Despesa.mc_busca_todas_despesas_por_mes()
         if resultados:
             dados = defaultdict(dict)
             todas_despesas = set()

@@ -3,7 +3,7 @@ from decimal import *
 import wx.grid
 from ativoNegociado import AtivoNegociado
 from cotacao import *
-from despesa import Despesas
+from despesa import Despesa
 from conta import Conta
 from capital import Capital
 from diversos import *
@@ -265,7 +265,7 @@ class FrmRendaTotal(wx.Frame):
 
     def buscaDespesas(self, idconta):
         self.listaDespesas.clear()
-        lista = Despesas.mc_busca_despesas_por_conta(idconta)
+        lista = Despesa.mc_busca_despesas_por_conta(idconta)
         for row in lista:
             dataOperacao = row[0].strftime("%Y/%m")
             #valor = float(int(row[1] * 100.0) / 100.0)# * self.cotacaoAtual
