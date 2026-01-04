@@ -98,6 +98,8 @@ class NotaNegociacao:
         self.con.close()
 
     def criaNotaNegociao(self, numero_nota, data_operacao, id_conta, data_efetivacao):
+        if len(numero_nota) == 0:
+            return
         self.selectByNumeroNota(numero_nota)
         if self.numero_nota == '':
             self.set_numero_nota(numero_nota)
