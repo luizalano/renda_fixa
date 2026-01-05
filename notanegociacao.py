@@ -24,9 +24,9 @@ class NotaNegociacao:
     def set_numero_nota(self, arg):
         if isinstance(arg, (str)): self.numero_nota = arg
     def set_data_operacao(self, arg):
-        self.data_operacao = devolveDataDMY(arg)
+        self.data_operacao = devolveDateTime(arg)
     def set_data_efetivacao(self, arg):
-        self.data_efetivacao = devolveDataDMY(arg)
+        self.data_efetivacao = devolveDateTime(arg)
     def set_id_conta(self, arg):
         self.id_conta = -1
         if isinstance(arg, (int)):
@@ -49,11 +49,10 @@ class NotaNegociacao:
 
     def insert(self):
         self.con = self.getConexao()
-        retorno = -1
         if len(self.numero_nota) > 0:
             with self.con.cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO notanegocicao (numero_nota, data_operacao, id_conta, dataefetivacao) VALUES (%s, %s, %s, %s)",
+                    "INSERT INTO notanegociacao (numeronota, dataoperacao, idconta, dataefetivacao) VALUES (%s, %s, %s, %s)",
                     (self.numero_nota, self.data_operacao, self.id_conta, self.data_efetivacao),
                 )
                 self.con.commit()
@@ -63,8 +62,8 @@ class NotaNegociacao:
         self.con = self.getConexao()
         with self.con.cursor() as cursor:
             cursor.execute("UPDATE notanegociacao SET numeronota = %s, "
-                           "data_operacao = %s, "
-                           "id_conta = %s, "
+                           "dataoperacao = %s, "
+                           "idconta = %s, "
                            "dataefetivacao = %s "
                            "WHERE numeronota = %s", (self.numero_nota, self.data_operacao, self.id_conta, self.data_efetivacao, self.numero_nota))
             self.con.commit()
@@ -106,7 +105,7 @@ class NotaNegociacao:
             self.set_data_operacao(data_operacao)
             self.set_id_conta(id_conta)
             self.set_data_efetivacao(data_efetivacao)
-            id = self.insert()
+            self.insert()
 
             AtivoNegociado().insere_numero_nota_negociaco(numero_nota, data_operacao, id_conta)
 

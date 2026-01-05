@@ -87,7 +87,7 @@ class frmDesempenhoAtivo(FrameMG):
 
         self.iconeConta = wx.Bitmap(self.caminho + 'checkbox_select_32.png')
         lb, ab = self.iconeConta.GetSize()
-        self.botaoConta = wx.BitmapButton(self.painel, id=8572, bitmap=self.iconeConta,
+        self.botaoConta = wx.BitmapButton(self.painel, id=3556, bitmap=self.iconeConta,
                                          pos=(6, 12))
         self.Bind(wx.EVT_BUTTON, self.chama_Dialog_conta, self.botaoConta)
         self.botaoConta.SetToolTip("Seleciona a conta corrente")

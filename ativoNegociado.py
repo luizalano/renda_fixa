@@ -466,10 +466,7 @@ class AtivoNegociado():
     def insere_numero_nota_negociaco(numero_nota, data_operacao, id_conta):
         conexao = AtivoNegociado.getConexao()
         with conexao.cursor() as cursor:
-            cursor.execute("update ativonegociado set notanegociacao = %s where dataoperacao = %s and idconta = %s and idativo <> 10642", (numero_nota, data_operacao, id_conta))
-            row = cursor.fetchone()
+            cursor.execute("update ativonegociado set numeronota = %s where dataoperacao = %s and idconta = %s and idativo <> 10642", (numero_nota, data_operacao, id_conta))
+            conexao.commit()
             conexao.close()
-            if row: return row[0]
-            else: return None
-
 

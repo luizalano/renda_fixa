@@ -152,7 +152,7 @@ class Despesa():
 
         self.notaNegociacao.criaNotaNegociao(self.numero_nota, self.data_lancamento, self.id_conta, self.data_efetivacao)
 
-        clausulaSql = 'insert into despesas (datalancamento, descricao, valor, idconta, idtipodespesa, numeronota, dataefetivacao) values (%s, %s, %s, %s, %s, %s) returning id'
+        clausulaSql = 'insert into despesas (datalancamento, descricao, valor, idconta, idtipodespesa, numeronota, dataefetivacao) values (%s, %s, %s, %s, %s, %s, %s) returning id'
 
         try:
             cursor.execute(clausulaSql, 
