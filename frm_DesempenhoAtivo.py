@@ -231,26 +231,32 @@ class frmDesempenhoAtivo(FrameMG):
                                                            tamanho=(12, 1), max=6, multi=False)
 
         self.iconeRendaFixa = wx.Bitmap(self.caminho + 'Cofre-32x32.png')
-        lb, ab = self.iconeRendaFixa.GetSize()
-        self.botaoRendaFixa = wx.BitmapButton(self.painel, id=132, bitmap=self.iconeRendaFixa, pos=(1100, 595))
+        lbrendafixa, abrendafixa = self.iconeRendaFixa.GetSize()
+        novoxi = 1060
+        novoyi = 597
+        plusx = 5
+        plusy = 5
+        self.botaoRendaFixa = wx.BitmapButton(self.painel, id=132, bitmap=self.iconeRendaFixa, pos=(novoxi, novoyi))
         self.Bind(wx.EVT_BUTTON, self.chama_frmRendaFixa, self.botaoRendaFixa)
         self.botaoRendaFixa.SetToolTip("Renda Fixa")
 
         self.iconeNota = wx.Bitmap(self.caminho + 'invoice32.png')
-        lb, ab = self.iconeNota.GetSize()
-        self.botaoNota = wx.BitmapButton(self.painel, id=8572, bitmap=self.iconeNota, pos=(1150, 597))
+        lbnota, abnota = self.iconeNota.GetSize()
+        self.botaoNota = wx.BitmapButton(self.painel, id=8572, bitmap=self.iconeNota, pos=(novoxi + lbrendafixa + plusx, novoyi))
+        novoxi = novoxi + lbrendafixa + plusx
         self.Bind(wx.EVT_BUTTON, self.chamaNota, self.botaoNota)
         self.botaoNota.SetToolTip("Confere as notas de negociação")
 
         self.iconeVariacao = wx.Bitmap(self.caminho + 'stock-exchange-32.png')
-        lb, ab = self.iconeVariacao.GetSize()
-        self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(1150, 640))
+        lbvariacao, abvariacao = self.iconeVariacao.GetSize()
+        self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(novoxi + lbnota + plusx, novoyi + abnota + plusy))
+        novoxi = novoxi + lbnota + plusx
         self.Bind(wx.EVT_BUTTON, self.chama_frmvariacao, self.botaoVariacao)
         self.botaoVariacao.SetToolTip("Grafico da variação diária de ativos")
 
         self.iconeRenda = wx.Bitmap(self.caminho + 'Rendimento-64.png')
-        lb, ab = self.iconeRenda.GetSize()
-        self.botaoRenda = wx.BitmapButton(self.painel, id=5202, bitmap=self.iconeRenda, pos=(1200, 597))
+        lbrenda, abrenda = self.iconeRenda.GetSize()
+        self.botaoRenda = wx.BitmapButton(self.painel, id=5202, bitmap=self.iconeRenda, pos=(1200, 596))
         self.Bind(wx.EVT_BUTTON, self.chama_frmrRendaTotal, self.botaoRenda)
         self.botaoRenda.SetToolTip("Mapa de Rendimentos")
 
