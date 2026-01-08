@@ -87,8 +87,7 @@ class frmDesempenhoAtivo(FrameMG):
 
         self.iconeConta = wx.Bitmap(self.caminho + 'checkbox_select_32.png')
         lb, ab = self.iconeConta.GetSize()
-        self.botaoConta = wx.BitmapButton(self.painel, id=3556, bitmap=self.iconeConta,
-                                         pos=(6, 12))
+        self.botaoConta = wx.BitmapButton(self.painel, id=3556, bitmap=self.iconeConta, pos=(6, 12), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_Dialog_conta, self.botaoConta)
         self.botaoConta.SetToolTip("Seleciona a conta corrente")
 
@@ -102,8 +101,7 @@ class frmDesempenhoAtivo(FrameMG):
 
         self.iconeBolsas = wx.Bitmap(self.caminho + 'bolsas-32.png')
         lb, ab = self.iconeBolsas.GetSize()
-        self.botaoBolsas = wx.BitmapButton(self.painel, id=ID_ANY, bitmap=self.iconeBolsas,
-                                         pos=(self.posx(x0 + 25), 12))
+        self.botaoBolsas = wx.BitmapButton(self.painel, id=ID_ANY, bitmap=self.iconeBolsas, pos=(self.posx(x0 + 25), 12), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_Dialog_bolsas, self.botaoBolsas)
         self.botaoBolsas.SetToolTip("Seleciona a bolsa")
 
@@ -154,50 +152,43 @@ class frmDesempenhoAtivo(FrameMG):
         #
         self.iconeHoje = wx.Bitmap(self.caminho + 'hoje-32.png')
         lb, ab = self.iconeConta.GetSize()
-        self.botaoHoje = wx.BitmapButton(self.painel, id=8571, bitmap=self.iconeHoje,
-                                         pos=(1067, 12))
+        self.botaoHoje = wx.BitmapButton(self.painel, id=8571, bitmap=self.iconeHoje, pos=(1067, 12), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_frmnegociadoNoDiaNoDia, self.botaoHoje)
         self.botaoHoje.SetToolTip("Ativos negociados na data")
 
         self.iconeCarteira = wx.Bitmap(self.caminho + 'wallet_32.png')
         lb, ab = self.iconeCarteira.GetSize()
-        self.botaoCarteira = wx.BitmapButton(self.painel, id=8472, bitmap=self.iconeCarteira,
-                                         pos=(1107, 12))
+        self.botaoCarteira = wx.BitmapButton(self.painel, id=8472, bitmap=self.iconeCarteira, pos=(1107, 12), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_frmcarteira, self.botaoCarteira)
         self.botaoCarteira.SetToolTip("Ações em carteira")
 
         self.iconeProvento = wx.Bitmap(self.caminho + 'money_dollar_cash_coins_32.png')
         lb, ab = self.iconeProvento.GetSize()
-        self.botaoProvento = wx.BitmapButton(self.painel, id=8442, bitmap=self.iconeProvento,
-                                         pos=(1147, 12))
+        self.botaoProvento = wx.BitmapButton(self.painel, id=8442, bitmap=self.iconeProvento, pos=(1147, 12), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_frmproventos, self.botaoProvento)
         self.botaoProvento.SetToolTip("Proventos recebidos")
 
         self.iconeCapital = wx.Bitmap(self.caminho + 'dinheiro_entra_32.png')
         lb, ab = self.iconeCapital.GetSize()
-        self.botaoCapital = wx.BitmapButton(self.painel, id=5572, bitmap=self.iconeCapital,
-                                         pos=(1187, 12))
+        self.botaoCapital = wx.BitmapButton(self.painel, id=5572, bitmap=self.iconeCapital, pos=(1187, 12), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_frmcapital, self.botaoCapital)
         self.botaoCapital.SetToolTip("Aumento de Capital ou retiradas")
 
         self.iconeDespesas = wx.Bitmap(self.caminho + 'dinheiro_sai_32.png')
         lb, ab = self.iconeDespesas.GetSize()
-        self.botaoDespesas = wx.BitmapButton(self.painel, id=5552, bitmap=self.iconeDespesas,
-                                         pos=(1227, 12))
+        self.botaoDespesas = wx.BitmapButton(self.painel, id=5552, bitmap=self.iconeDespesas, pos=(1227, 12), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_frmdespesas, self.botaoDespesas)
         self.botaoDespesas.SetToolTip("Registrar Despesas")
 
         self.iconeImporta = wx.Bitmap(self.caminho + 'importa-32.png')
         lb, ab = self.iconeImporta.GetSize()
-        self.botaoImporta = wx.BitmapButton(self.painel, id=2202, bitmap=self.iconeImporta,
-                                         pos=(1267, 12))
+        self.botaoImporta = wx.BitmapButton(self.painel, id=2202, bitmap=self.iconeImporta, pos=(1267, 12), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_frmleRadarB3, self.botaoImporta)
         self.botaoImporta.SetToolTip("Importa planiha de Radar de Proventos")
 
         self.iconeRadar = wx.Bitmap(self.caminho + 'radar-32.png')
         lb, ab = self.iconeRadar.GetSize()
-        self.botaoRadar = wx.BitmapButton(self.painel, id=1202, bitmap=self.iconeRadar,
-                                         pos=(1307, 12))
+        self.botaoRadar = wx.BitmapButton(self.painel, id=1202, bitmap=self.iconeRadar, pos=(1307, 12), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_frmradar, self.botaoRadar)
         self.botaoRadar.SetToolTip("Exibe Radar de Proventos")
 
@@ -236,27 +227,28 @@ class frmDesempenhoAtivo(FrameMG):
         novoyi = 597
         plusx = 5
         plusy = 5
-        self.botaoRendaFixa = wx.BitmapButton(self.painel, id=132, bitmap=self.iconeRendaFixa, pos=(novoxi, novoyi))
+        self.botaoRendaFixa = wx.BitmapButton(self.painel, id=132, bitmap=self.iconeRendaFixa, pos=(novoxi, novoyi), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_frmRendaFixa, self.botaoRendaFixa)
         self.botaoRendaFixa.SetToolTip("Renda Fixa")
 
         self.iconeNota = wx.Bitmap(self.caminho + 'invoice32.png')
         lbnota, abnota = self.iconeNota.GetSize()
-        self.botaoNota = wx.BitmapButton(self.painel, id=8572, bitmap=self.iconeNota, pos=(novoxi + lbrendafixa + plusx, novoyi))
+        self.botaoNota = wx.BitmapButton(self.painel, id=8572, bitmap=self.iconeNota, pos=(novoxi + lbrendafixa + plusx, novoyi), style=wx.NO_BORDER)
         novoxi = novoxi + lbrendafixa + plusx
         self.Bind(wx.EVT_BUTTON, self.chamaNota, self.botaoNota)
         self.botaoNota.SetToolTip("Confere as notas de negociação")
 
         self.iconeVariacao = wx.Bitmap(self.caminho + 'stock-exchange-32.png')
         lbvariacao, abvariacao = self.iconeVariacao.GetSize()
-        self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(novoxi + lbnota + plusx, novoyi + abnota + plusy))
+        #self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(novoxi + lbnota + plusx, novoyi + abnota + plusy), style=wx.NO_BORDER)
+        self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(novoxi + lbnota + plusx, novoyi), style=wx.NO_BORDER)
         novoxi = novoxi + lbnota + plusx
         self.Bind(wx.EVT_BUTTON, self.chama_frmvariacao, self.botaoVariacao)
         self.botaoVariacao.SetToolTip("Grafico da variação diária de ativos")
 
         self.iconeRenda = wx.Bitmap(self.caminho + 'Rendimento-64.png')
         lbrenda, abrenda = self.iconeRenda.GetSize()
-        self.botaoRenda = wx.BitmapButton(self.painel, id=5202, bitmap=self.iconeRenda, pos=(1200, 596))
+        self.botaoRenda = wx.BitmapButton(self.painel, id=5202, bitmap=self.iconeRenda, pos=(1200, 596), style=wx.NO_BORDER)
         self.Bind(wx.EVT_BUTTON, self.chama_frmrRendaTotal, self.botaoRenda)
         self.botaoRenda.SetToolTip("Mapa de Rendimentos")
 
