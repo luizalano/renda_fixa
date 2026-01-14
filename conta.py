@@ -191,7 +191,7 @@ class Conta:
             return lista
 
     @staticmethod
-    def mc_get_saldo_bancario(conta):
+    def mc_get_saldo_bancario_com_rf(conta):
         try:
             conexao = ConectaBD.retornaConexao()
         except Exception as e:
@@ -230,7 +230,7 @@ class Conta:
                 return None
     
     @staticmethod
-    def mc_get_saldo_bancario_teorico(conta):
+    def mc_get_saldo_bancario_teorico_com_rf(conta):
         try:
             conexao = ConectaBD.retornaConexao()
         except Exception as e:
@@ -302,6 +302,75 @@ class Conta:
         
         conexao.close()
         return contas
+
+
+    @staticmethod
+    def mc_get_saldo_bancario(conta):
+        try:
+            conexao = ConectaBD.retornaConexao()
+        except Exception as e:
+            print(f"Erro ao conectar com o banco: {e}")
+            return False
+
+        with conexao.cursor() as cursor:
+            clausulaSql = 'WITH valores AS (    ' \
+                          'SELECT ' \
+                             '(SELECT COALESCE(SUM(valorbruto) - SUM(valorir), 0) FROM proventos WHERE pago = TRUE and idconta = %s) AS proventos, ' \
+                             '(SELECT COALESCE(SUM(valor), 0) FROM despesas where idconta = %s) AS despesas, '\
+                             '(SELECT COALESCE(SUM(valor), 0) FROM capital where idconta = %s) AS aportes '\
+                           '), ' \
+                          'transacoes AS ( ' \
+                          'SELECT ' \
+                             'COALESCE(SUM(CASE WHEN operacao = 1 THEN valoroperacao * qtdeoperacao ELSE 0 END), 0) AS compras, ' \
+                             'COALESCE(SUM(CASE WHEN operacao = 2 THEN valoroperacao * qtdeoperacao ELSE 0 END), 0) AS vendas ' \
+                          'FROM ativonegociado where simulado = false and idconta = %s' \
+                          ') ' \
+                          'SELECT ' \
+                             ' v.proventos, v.despesas, v.aportes, t.compras, t.vendas,  ' \
+                             '(v.proventos - v.despesas + v.aportes - t.compras + t.vendas) AS saldo ' \
+                          'FROM valores v, transacoes t;'
+
+            cursor.execute(clausulaSql, (conta, conta, conta,conta))
+            lista = cursor.fetchone()
+            if lista:
+                return lista[5]
+            else:
+                return None
+    
+    @staticmethod
+    def mc_get_saldo_bancario_teorico(conta):
+        try:
+            conexao = ConectaBD.retornaConexao()
+        except Exception as e:
+            print(f"Erro ao conectar com o banco: {e}")
+            return False
+        with conexao.cursor() as cursor:
+            clausulaSql = 'WITH valores AS (    ' \
+                          'SELECT ' \
+                             '(SELECT COALESCE(SUM(valorbruto) - SUM(valorir), 0) FROM proventos WHERE pago = TRUE and idconta = %s) AS proventos, ' \
+                             '(SELECT COALESCE(SUM(valor), 0) FROM despesas where idconta = %s) AS despesas, '\
+                             '(SELECT COALESCE(SUM(valor), 0) FROM capital where idconta = %s) AS aportes '\
+                           '), ' \
+                          'transacoes AS ( ' \
+                          'SELECT ' \
+                             'COALESCE(SUM(CASE WHEN operacao = 1 THEN valoroperacao * qtdeoperacao ELSE 0 END), 0) AS compras, ' \
+                             'COALESCE(SUM(CASE WHEN operacao = 2 THEN valoroperacao * qtdeoperacao ELSE 0 END), 0) AS vendas ' \
+                          'FROM ativonegociado where idconta = %s' \
+                          ') ' \
+                          'SELECT ' \
+                             ' v.proventos, v.despesas, v.aportes, t.compras, t.vendas, ' \
+                             '(v.proventos - v.despesas + v.aportes - t.compras + t.vendas) AS saldo ' \
+                          'FROM valores v, transacoes t;'
+
+            cursor.execute(clausulaSql, (conta, conta, conta, conta))
+            lista = cursor.fetchone()
+            if lista:
+                return lista[5]
+            else:
+                return None
+
+        self.con.close()
+
 
 def main():
     conta = Conta()
