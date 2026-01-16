@@ -8,6 +8,7 @@ from conta import Conta
 from capital import Capital
 from diversos import *
 #from collections import defaultdict
+from collections import deque
 
 from provento import Provento
 
@@ -29,6 +30,7 @@ class FrmRendaTotal(wx.Frame):
         self.listaRendaAcoes = []
         self.listaRendaProventos = []
         self.listaRendaDespesas = []
+        self.listaRendaMesMovel = deque(maxlen=12)
         self.listaGeral = []
         self.lan = []
         self.proventos = []
@@ -64,15 +66,15 @@ class FrmRendaTotal(wx.Frame):
 
         # Criar Grid
         grid = wx.grid.Grid(parent, size=(1300, 550))
-        grid.CreateGrid(0, 13)
+        grid.CreateGrid(0, 15)
 
         colunas = ["Ref", "Inicial", "Aporte", "Retirada", "Rendimento", "Provento",
-                   "Despesa", "Renda Mês", "Acumulado", "Saldo", "Renda %", "Acum %", "Média %"]
+                   "Despesa", "Renda Mês", "Acumulado", "Saldo", "Renda %", "Acum %", "Média %", "12 meses", "12 média"]
 
         for i, label in enumerate(colunas):
             grid.SetColLabelValue(i, label)
 
-        sizer.Add(grid, 0, wx.ALL, 10)
+        sizer.Add(grid, 0, wx.ALL, 11)
 
         self.tabs_data[nome_tab] = {}  # Garante que a aba existe no dicionário
         self.tabs_data[nome_tab]["grid"] = grid  # Salva a referência da grid
@@ -163,6 +165,7 @@ class FrmRendaTotal(wx.Frame):
                 self.removeTab(row[1])
             else:
                 self.listaGeral.clear()
+                self.listaRendaMesMovel.clear()
                 self.cotacaoAtual = row[3]  #devolveFloatDeDecimal(row[3], 2)
                 self.buscaRendaPorAtivo(row[0])
                 self.buscaDespesas(row[0])
@@ -170,6 +173,7 @@ class FrmRendaTotal(wx.Frame):
                 self.juntaListas()
                 self.montaGrid(row[1])
 
+        self.listaRendaMesMovel.clear()
         self.consolidaRendimentos()
 
     def buscaRendaPorAtivo(self, idconta):
@@ -376,6 +380,22 @@ class FrmRendaTotal(wx.Frame):
                 else:
                     self.listaGeral.append([ref, 0, 0, 0, 0, valor])
 
+    def devolve_renda_media_movel(self, rendimento_mes):
+        # adiciona o novo rendimento (já faz o shift automático se passar de 12)
+        self.listaRendaMesMovel.append(rendimento_mes)
+
+        # cálculo do acumulado geométrico
+        rendaPercAcm = 1.0
+        for r in self.listaRendaMesMovel:
+            rendaPercAcm *= (1 + r)
+        rendaPercAcm -= 1
+
+        # cálculo da média geométrica equivalente
+        rendaMedia = (1 + rendaPercAcm) ** (1 / len(self.listaRendaMesMovel)) - 1
+
+        # retorna apenas os cálculos, a lista já foi atualizada por referência
+        return rendaMedia, rendaPercAcm
+
     def montaGrid(self, nometab):
         listaOrdenada = sorted(self.listaGeral, key=lambda x: x[0])
 
@@ -389,6 +409,7 @@ class FrmRendaTotal(wx.Frame):
         saldo = Decimal('0.0')
         rendPercAcm = 0.0
         rendaMedia = 0.0
+        rendaAno = zero
 
         totalAporte  = Decimal('0.0')
         totalRetirada = Decimal('0.0')
@@ -419,11 +440,15 @@ class FrmRendaTotal(wx.Frame):
             else:
                 rendperc = 0.0
             if linha > 0:
-               rendPercAcm = (1 + rendperc) * (1 + rendPercAcm) - 1
-               rendaMedia = ((1 + rendPercAcm) ** (1 / linha)) - 1
+                rendPercAcm = (1 + rendperc) * (1 + rendPercAcm) - 1
+                rendaMedia = ((1 + rendPercAcm) ** (1 / linha)) - 1
+                
             else:
                rendPercAcm = rendperc
                rendaMedia = rendperc
+               rendaAno = rendaMes
+               
+            rendaMediaAno, rendaAno = self.devolve_renda_media_movel(rendperc)
 
             totalAporte += aporte
             totalRetirada += retirada
@@ -453,6 +478,12 @@ class FrmRendaTotal(wx.Frame):
             grid.SetCellValue(linha, 12, formata_numero(rendaMedia * 100.0))
             if rendaMedia < 0: 
                 grid.SetCellTextColour(linha, 12, wx.RED)
+            grid.SetCellValue(linha, 13, formata_numero(rendaAno * 100.0))
+            if rendaAno < 0: 
+                grid.SetCellTextColour(linha, 13, wx.RED)
+            grid.SetCellValue(linha, 14, formata_numero(rendaMediaAno * 100.0))
+            if rendaMediaAno < 0: 
+                grid.SetCellTextColour(linha, 14, wx.RED)
 
             grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
@@ -467,9 +498,11 @@ class FrmRendaTotal(wx.Frame):
             grid.SetCellAlignment(linha, 10, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             grid.SetCellAlignment(linha, 11, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             grid.SetCellAlignment(linha, 12, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 13, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 14, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
 
             if linha % 2 != 0:
-                for i in range(0, 13):
+                for i in range(0, 15):
                     grid.SetCellBackgroundColour(linha, i, wx.Colour(230, 255, 255))
 
         #self.totalDisponivel = saldo - self.totalComprado
@@ -592,6 +625,8 @@ class FrmRendaTotal(wx.Frame):
                rendPercAcm = rendperc
                rendaMedia = rendperc
 
+            rendaMediaAno, rendaAno = self.devolve_renda_media_movel(rendperc)
+
             totalAporte += aporte
             totalRetirada += retirada
             totalProventos += provento
@@ -620,6 +655,12 @@ class FrmRendaTotal(wx.Frame):
             grid_total.SetCellValue(row, 12, formata_numero(rendaMedia * 100.0))
             if rendaMedia < 0: 
                 grid_total.SetCellTextColour(row, 12, wx.RED)
+            grid_total.SetCellValue(row, 13, formata_numero(rendaAno * 100.0))
+            if rendaAno < 0: 
+                grid_total.SetCellTextColour(row, 13, wx.RED)
+            grid_total.SetCellValue(row, 14, formata_numero(rendaMediaAno * 100.0))
+            if rendaMediaAno < 0: 
+                grid_total.SetCellTextColour(row, 14, wx.RED)
 
             grid_total.SetCellAlignment(row,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             grid_total.SetCellAlignment(row,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
@@ -634,9 +675,11 @@ class FrmRendaTotal(wx.Frame):
             grid_total.SetCellAlignment(row, 10, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             grid_total.SetCellAlignment(row, 11, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             grid_total.SetCellAlignment(row, 12, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid_total.SetCellAlignment(row, 13, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid_total.SetCellAlignment(row, 14, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
 
             if linha % 2 != 0:
-                for i in range(0, 13):
+                for i in range(0, 15):
                     grid_total.SetCellBackgroundColour(row, i, wx.Colour(230, 255, 255))
 
         self.totalDisponivel = totalAporte - totalRetirada - totalDespesas + totalProventos + self.totalVendasReal - self.totalComprasReal
