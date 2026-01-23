@@ -625,7 +625,7 @@ class FrmRendaTotal(wx.Frame):
                 rendperc = 0.0
             if linha > 0:
                rendPercAcm = (1 + rendperc) * (1 + rendPercAcm) - 1
-               rendaMedia = ((1 + rendPercAcm) ** (1 / linha + 1)) - 1
+               rendaMedia = ((1 + rendPercAcm) ** (1 / (linha + 1))) - 1
             else:
                rendPercAcm = rendperc
                rendaMedia = rendperc
