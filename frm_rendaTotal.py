@@ -417,7 +417,8 @@ class FrmRendaTotal(wx.Frame):
         totalRenda = Decimal('0.0')
         totalDespesas = Decimal('0.0')
         totalResultado = Decimal('0.0')
-
+        if nometab == "XP - Neovalor":
+            a = 9
         for row in listaOrdenada:
 
             linha += 1
@@ -441,7 +442,7 @@ class FrmRendaTotal(wx.Frame):
                 rendperc = 0.0
             if linha > 0:
                 rendPercAcm = (1 + rendperc) * (1 + rendPercAcm) - 1
-                rendaMedia = ((1 + rendPercAcm) ** (1 / linha)) - 1
+                rendaMedia = ((1 + rendPercAcm) ** (1 / (linha + 1))) - 1
                 
             else:
                rendPercAcm = rendperc
@@ -476,13 +477,17 @@ class FrmRendaTotal(wx.Frame):
             grid.SetCellValue(linha, 11, formata_numero(rendPercAcm * 100.0))
             if rendPercAcm < 0: grid.SetCellTextColour(linha, 11, wx.RED)
             grid.SetCellValue(linha, 12, formata_numero(rendaMedia * 100.0))
-            if rendaMedia < 0: 
-                grid.SetCellTextColour(linha, 12, wx.RED)
+            try:
+                if rendaMedia < zero: 
+                    grid.SetCellTextColour(linha, 12, wx.RED)
+            except Exception as e:
+                print(e)
+                print("Na linha " + str(linha))
             grid.SetCellValue(linha, 13, formata_numero(rendaAno * 100.0))
-            if rendaAno < 0: 
+            if rendaAno < zero: 
                 grid.SetCellTextColour(linha, 13, wx.RED)
             grid.SetCellValue(linha, 14, formata_numero(rendaMediaAno * 100.0))
-            if rendaMediaAno < 0: 
+            if rendaMediaAno < zero: 
                 grid.SetCellTextColour(linha, 14, wx.RED)
 
             grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
