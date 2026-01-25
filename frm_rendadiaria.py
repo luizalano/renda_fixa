@@ -29,9 +29,12 @@ class FrmRendaDiaria(wx.Frame):
             "capital_base": zero,
             "resultado_dia": zero,
             "resultado_acumulado": zero,
-            "rend_pct": zero,
+            "renda_pct": zero,
             "renda_acumulada": zero,
             "saldo_fim": zero,
+            "renda_media": zero,
+            "no_ano": zero,
+            "no_ano_media": zero,
         })
   
         self.meses_expandidos = {}   
@@ -89,9 +92,12 @@ class FrmRendaDiaria(wx.Frame):
             "capital_base": zero,
             "resultado_dia": zero,
             "resultado_acumulado": zero,
-            "rend_pct": zero,
+            "renda_pct": zero,
             "renda_acumulada": zero,
             "saldo_fim": zero,
+            "renda_media": zero,
+            "no_ano": zero,
+            "no_ano_media": zero,
         }
 
     def criaComponentes(self, parent, nome_tab):
@@ -491,85 +497,18 @@ class FrmRendaDiaria(wx.Frame):
                 # retirada sempre positiva no modelo
                 self.dados_por_mes[nome_tab][mes]["dias"][dia]["retirada"] += valor * -1
 
-    def juntaListas(self):
-        for ref, valor in self.listaCapital:
-            if len(self.listaGeral) == 0:
-                #self.listaGeral.append([[ref], [valor], [], [], [], []])
-                self.listaGeral.append([ref, valor, 0, 0, 0, 0])
-            else:
-                linha = (-1)
-                for item in self.listaGeral:
-                    linha += 1
-                    if item[0] == ref:
-                        self.listaGeral[linha][1] = valor
-                        break
-                else:
-                    self.listaGeral.append([ref, valor, 0, 0, 0, 0])
-
-        for ref, valor in self.listaRetirada:
-            if len(self.listaGeral) == 0:
-                self.listaGeral.append([ref, 0, valor, 0, 0, 0])
-            else:
-                linha = (-1)
-                for item in self.listaGeral:
-                    linha += 1
-                    if item[0] == ref:
-                        self.listaGeral[linha][2] = valor
-                        break
-                else:
-                    self.listaGeral.append([ref, 0, valor, 0, 0, 0])
-
-        for ref, valor in self.listaRendaAcoes:
-            if len(self.listaGeral) == 0:
-                self.listaGeral.append([ref, 0, 0, valor, 0, 0])
-            else:
-                linha = (-1)
-                for item in self.listaGeral:
-                    linha += 1
-                    if item[0] == ref:
-                        self.listaGeral[linha][3] = valor
-                        break
-                else:
-                    self.listaGeral.append([ref, 0, 0, valor, 0, 0])
-
-        for ref, valor in self.listaRendaProventos:
-            if len(self.listaGeral) == 0:
-                self.listaGeral.append([ref, 0, 0, 0, valor, 0])
-            else:
-                linha = (-1)
-                for item in self.listaGeral:
-                    linha += 1
-                    if item[0] == ref:
-                        self.listaGeral[linha][4] = valor
-                        break
-                else:
-                    self.listaGeral.append([ref, 0, 0, 0, valor, 0])
-
-        for ref, valor in self.listaDespesas:
-            if len(self.listaGeral) == 0:
-                self.listaGeral.append([ref, 0, 0, 0, 0, valor])
-            else:
-                linha = (-1)
-                for item in self.listaGeral:
-                    linha += 1
-                    if item[0] == ref:
-                        self.listaGeral[linha][5] = valor
-                        break
-                else:
-                    self.listaGeral.append([ref, 0, 0, 0, 0, valor])
-
     def devolve_renda_media_movel(self, rendimento_mes):
         # adiciona o novo rendimento (já faz o shift automático se passar de 12)
         self.listaRendaMesMovel.append(rendimento_mes)
 
         # cálculo do acumulado geométrico
-        rendaPercAcm = 1.0
+        rendaPercAcm = um
         for r in self.listaRendaMesMovel:
             rendaPercAcm *= (1 + r)
         rendaPercAcm -= 1
 
         # cálculo da média geométrica equivalente
-        rendaMedia = (1 + rendaPercAcm) ** (1 / len(self.listaRendaMesMovel)) - 1
+        rendaMedia = (1 + rendaPercAcm) ** (1 / Decimal(len(self.listaRendaMesMovel))) - 1
 
         # retorna apenas os cálculos, a lista já foi atualizada por referência
         return rendaMedia, rendaPercAcm
@@ -596,19 +535,29 @@ class FrmRendaDiaria(wx.Frame):
             rendimento = cons["rendimento"]
             provento = cons["provento"]
             despesa = cons["despesa"]
+            rendaMes = cons["resultado_dia"]
+            rendaAcumulada = cons["resultado_acumulado"]
+            rendPercAcm = cons['renda_acumulada']
+            renda_media = cons['renda_media']
+            renda_ano = cons['no_ano']
+            renda_ano_media = cons['no_ano_media']
+            rend_mensal = cons["renda_pct"]
+            saldo_fim = cons["saldo_fim"]
 
+            """
             rendaMes = rendimento + provento - despesa
             rendaAcumulada += rendaMes
 
             ultimo_dia = sorted(dados["dias"].keys())[-1]
             saldo = dados["dias"][ultimo_dia]["saldo_fim"]
 
-            rend_mensal = cons["rend_pct"]
+            rend_mensal = cons["renda_pct"]
 
             if linha >= 0:
                 rendPercAcm = (Decimal("1") + rend_mensal) * (Decimal("1") + rendPercAcm) - Decimal("1")
             else:
                 rendPercAcm = rend_mensal
+            """
 
             linha += 1
             grid.AppendRows(1)
@@ -619,7 +568,7 @@ class FrmRendaDiaria(wx.Frame):
 
             grid.SetCellValue(linha, 0, f"{icone} {mes}")
 
-            grid.SetCellValue(linha, 1, formata_numero(saldo - rendaMes))
+            grid.SetCellValue(linha, 1, formata_numero(saldo_fim - rendaMes))
             grid.SetCellValue(linha, 2, formata_numero(aporte))
             grid.SetCellValue(linha, 3, formata_numero(retirada))
             grid.SetCellValue(linha, 4, formata_numero(rendimento))
@@ -627,9 +576,12 @@ class FrmRendaDiaria(wx.Frame):
             grid.SetCellValue(linha, 6, formata_numero(despesa))
             grid.SetCellValue(linha, 7, formata_numero(rendaMes))
             grid.SetCellValue(linha, 8, formata_numero(rendaAcumulada))
-            grid.SetCellValue(linha, 9, formata_numero(saldo))
+            grid.SetCellValue(linha, 9, formata_numero(saldo_fim))
             grid.SetCellValue(linha,10, formata_numero(rend_mensal * 100))
             grid.SetCellValue(linha,11, formata_numero(rendPercAcm * 100))
+            grid.SetCellValue(linha,12, formata_numero(renda_media * 100))
+            grid.SetCellValue(linha,13, formata_numero(renda_ano * 100))
+            grid.SetCellValue(linha,14, formata_numero(renda_ano_media * 100))
 
             grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
@@ -675,7 +627,7 @@ class FrmRendaDiaria(wx.Frame):
                     grid.SetCellValue(linha, 7, formata_numero(d["resultado_dia"]))
                     grid.SetCellValue(linha, 8, formata_numero(d["resultado_acumulado"]))
                     grid.SetCellValue(linha, 9, formata_numero(d["saldo_fim"]))
-                    grid.SetCellValue(linha,10, formata_numero(d["rend_pct"] * 100))
+                    grid.SetCellValue(linha,10, formata_numero(d["renda_pct"] * 100))
                     grid.SetCellValue(linha,11, formata_numero(d["renda_acumulada"] * 100))
 
                     grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
@@ -725,7 +677,7 @@ class FrmRendaDiaria(wx.Frame):
             rendaMes = rendimento + provento - despesa
             rendaAcumulada += rendaMes
 
-            rend_mensal = cons["rend_pct"]
+            rend_mensal = cons["renda_pct"]
 
             if linha >= 0:
                 rendPercAcm = (Decimal("1") + rend_mensal) * (Decimal("1") + rendPercAcm) - Decimal("1")
@@ -802,17 +754,17 @@ class FrmRendaDiaria(wx.Frame):
 
                 # rendimento percentual diário
                 if capital_base != 0:
-                    rend_pct = resultado_dia / capital_base
+                    renda_pct = resultado_dia / capital_base
                 else:
-                    rend_pct = zero
-                renda_acumulada = (1 + renda_acumulada) * (1 + rend_pct) - 1
+                    renda_pct = zero
+                renda_acumulada = (1 + renda_acumulada) * (1 + renda_pct) - 1
                 # saldo final do dia
                 saldo_fim = capital_base + resultado_dia
 
                 # grava no modelo
                 d["capital_base"] = capital_base
                 d["resultado_dia"] = resultado_dia
-                d["rend_pct"] = rend_pct
+                d["renda_pct"] = renda_pct
                 d["saldo_fim"] = saldo_fim
                 d["resultado_acumulado"] = resultado_acumulado
                 d["renda_acumulada"] = renda_acumulada
@@ -828,8 +780,13 @@ class FrmRendaDiaria(wx.Frame):
         # - buscaCapital
         # - buscaDespesas
         # """
-
-        for mes, dados in self.dados_por_mes[nome_tab].items():
+        n = zero
+        rend_mensal_pct = zero
+        renda_acm_pct = zero
+        rendaAcumulada = zero
+        
+        for mes, dados in sorted(self.dados_por_mes[nome_tab].items()):
+            n += 1            
             consolidado = dados["consolidado"]
 
             # zera explicitamente (segurança)
@@ -837,9 +794,34 @@ class FrmRendaDiaria(wx.Frame):
                 consolidado[campo] = zero
 
             # soma todos os dias do mês
-            for dia, valores in dados["dias"].items():
+            for dia, valores in sorted(dados["dias"].items()):
                 for campo in consolidado:
                     consolidado[campo] += valores[campo]
+
+            aporte = consolidado["aporte"]
+            retirada = consolidado["retirada"]
+            rendimento = consolidado["rendimento"]
+            provento = consolidado["provento"]
+            despesa = consolidado["despesa"]
+
+            rendaMes = rendimento + provento - despesa
+            rendaAcumulada += rendaMes
+
+            ultimo_dia = sorted(dados["dias"].keys())[-1]
+            saldo = dados["dias"][ultimo_dia]["saldo_fim"]
+
+            renda_mensal_pct = consolidado["renda_pct"]
+            renda_acm_pct = (Decimal("1") + renda_mensal_pct) * (Decimal("1") + renda_acm_pct) - Decimal("1")
+
+            renda_media = (1 + renda_acm_pct) ** (um / n) - 1
+            rendaMediaAno, rendaAno = self.devolve_renda_media_movel(renda_mensal_pct)
+
+            consolidado['resultado_acumulado'] = rendaAcumulada
+            consolidado['renda_acumulada'] = renda_acm_pct
+            consolidado['renda_media'] = renda_media
+            consolidado['no_ano'] = rendaAno
+            consolidado["no_ano_media"] = rendaMediaAno
+            consolidado['saldo_fim'] = saldo
 
     def consolida_percentual_mensal(self, nome_tab):
         """
@@ -852,9 +834,9 @@ class FrmRendaDiaria(wx.Frame):
 
             fator = zero
             for dia in sorted(dias.keys()):
-                fator = ((um + fator) * (um + dias[dia]["rend_pct"])) - um
+                fator = ((um + fator) * (um + dias[dia]["renda_pct"])) - um
 
-            dados["consolidado"]["rend_pct"] = fator
+            dados["consolidado"]["renda_pct"] = fator
 
     def consolida_total(self):
         """
@@ -888,188 +870,6 @@ class FrmRendaDiaria(wx.Frame):
                 self.dados_total[mes]["despesa"] += cons["despesa"] * cotacao
 
 
-
-    def consolidaRendimentos(self):
-        """
-        Consolida os valores das abas individuais na aba 'Total'.
-        Soma por data e aplica a cotação de cada conta.
-        """
-
-        # garante que a aba Total existe
-        if "Total" not in self.tabs_data:
-            return
-
-        grid_total = self.tabs_data["Total"]["grid"]
-
-        # dicionário: {data: {coluna: valor}}
-        consolidados = {}
-
-        # percorre todas as abas (menos a Total)
-        for nome_tab, componentes in self.tabs_data.items():
-            if nome_tab == "Total":
-                continue
-
-            grid = componentes["grid"]
-            cotacao = componentes.get("cotacao", 1)
-
-            # percorre as linhas da grid
-            for row in range(grid.GetNumberRows()):
-                data = grid.GetCellValue(row, 0).strip()
-                if not data:
-                    continue
-
-                if data not in consolidados:
-                    consolidados[data] = {"Inicial": 0,"Aporte": 0,"Retirada": 0,"Rendimento": 0,"Provento": 0,"Despesa": 0,}
-
-                # mapeia colunas fixas
-                for col_nome, col_idx in {"Inicial": 1,"Aporte": 2,"Retirada": 3,"Rendimento": 4,"Provento": 5,"Despesa": 6,}.items():
-                    valor_str = grid.GetCellValue(row, col_idx)
-                    valor_str = valor_str.replace(".", "")
-                    valor_str = valor_str.replace(",", ".")
-                    #valor_str = grid.GetCellValue(row, col_idx).replace(",", ".")
-                    try:
-                        valor = Decimal(valor_str) if valor_str else zero
-                    except ValueError:
-                        valor = zero
-                    if valor == 0:
-                        valor = Decimal('0.00')
-                    consolidados[data][col_nome] += valor * cotacao
-
-        # limpa a grid Total
-        grid_total.ClearGrid()
-        if grid_total.GetNumberRows() > 0:
-            grid_total.DeleteRows(0, grid_total.GetNumberRows())
-
-        # insere as linhas consolidadas ordenadas por data
-        for data in sorted(consolidados.keys()):
-            linha = grid_total.GetNumberRows()
-            grid_total.AppendRows(1)
-            grid_total.SetCellValue(linha, 0, data)
-
-            grid_total.SetCellValue(linha, 1, f"{consolidados[data]['Inicial']:.2f}")
-            grid_total.SetCellValue(linha, 2, f"{consolidados[data]['Aporte']:.2f}")
-            grid_total.SetCellValue(linha, 3, f"{consolidados[data]['Retirada']:.2f}")
-            grid_total.SetCellValue(linha, 4, f"{consolidados[data]['Rendimento']:.2f}")
-            grid_total.SetCellValue(linha, 5, f"{consolidados[data]['Provento']:.2f}")
-            grid_total.SetCellValue(linha, 6, f"{consolidados[data]['Despesa']:.2f}")
-
-        # aqui você pode recalcular as demais colunas da aba Total (Renda Mês, Acumulado, % etc)
-
-        linha = (-1)
-        rendaAcumulada = zero
-        inicial = zero
-        saldo = zero
-        rendPercAcm = 0.0
-        rendaMedia = 0.0
-
-        totalAporte  = zero       
-        totalRetirada = zero
-        totalProventos = zero
-        totalRenda = zero
-        totalDespesas = zero
-        totalResultado = zero
-
-        for row in range(grid_total.GetNumberRows()):
-            
-            linha += 1
-            aporte = devolveDecimalDeFloat(grid_total.GetCellValue(row, 2), 2)
-            retirada = devolveDecimalDeFloat(grid_total.GetCellValue(row, 3), 2)
-            rendimento = devolveDecimalDeFloat(grid_total.GetCellValue(row, 4), 2)
-            provento = devolveDecimalDeFloat(grid_total.GetCellValue(row, 5), 2)
-            despesa = devolveDecimalDeFloat(grid_total.GetCellValue(row, 6), 2)
-            rendaMes = rendimento + provento - despesa
-
-            inicial = saldo + aporte - retirada
-            saldo = inicial + rendimento + provento - despesa
-            rendaAcumulada = rendaAcumulada + rendimento + provento - despesa
-            if inicial != zero:
-                auxdecimal = ((inicial + rendimento + provento - despesa) / inicial) -1
-                rendperc = devolveFloatDeDecimal(auxdecimal, 6)  
-            else:
-                rendperc = 0.0
-            if linha > 0:
-               rendPercAcm = (1 + rendperc) * (1 + rendPercAcm) - 1
-               rendaMedia = ((1 + rendPercAcm) ** (1 / (linha + 1))) - 1
-            else:
-               rendPercAcm = rendperc
-               rendaMedia = rendperc
-
-            rendaMediaAno, rendaAno = self.devolve_renda_media_movel(rendperc)
-
-            totalAporte += aporte
-            totalRetirada += retirada
-            totalProventos += provento
-            totalRenda += rendimento
-            totalDespesas += despesa
-            totalResultado += rendaMes
-
-            #rendimento = float(int(rendimento * 100.0) / 100.0)
-
-            grid_total.SetCellValue(row, 1, formata_numero(inicial))
-            grid_total.SetCellValue(row, 2, formata_numero(aporte))
-            grid_total.SetCellValue(row, 3, formata_numero(retirada))
-            grid_total.SetCellValue(row, 4, formata_numero(rendimento))
-            if rendimento < 0 : grid_total.SetCellTextColour(row, 4, wx.RED)
-            grid_total.SetCellValue(row, 5, formata_numero(provento))
-            grid_total.SetCellValue(row, 6, formata_numero(despesa))
-            grid_total.SetCellValue(linha, 7, formata_numero(rendaMes))
-            if rendaMes < 0: grid_total.SetCellTextColour(row, 7, wx.RED)
-            grid_total.SetCellValue(row, 8, formata_numero(rendaAcumulada))
-            if rendaAcumulada < 0: grid_total.SetCellTextColour(row, 8, wx.RED)
-            grid_total.SetCellValue(row, 9, formata_numero(saldo))
-            grid_total.SetCellValue(row, 10, formata_numero(rendperc * 100.0))
-            if rendperc < 0: grid_total.SetCellTextColour(row, 10, wx.RED)
-            grid_total.SetCellValue(row, 11, formata_numero(rendPercAcm * 100.0))
-            if rendPercAcm < 0: grid_total.SetCellTextColour(row, 11, wx.RED)
-            grid_total.SetCellValue(row, 12, formata_numero(rendaMedia * 100.0))
-            if rendaMedia < 0: 
-                grid_total.SetCellTextColour(row, 12, wx.RED)
-            grid_total.SetCellValue(row, 13, formata_numero(rendaAno * 100.0))
-            if rendaAno < 0: 
-                grid_total.SetCellTextColour(row, 13, wx.RED)
-            grid_total.SetCellValue(row, 14, formata_numero(rendaMediaAno * 100.0))
-            if rendaMediaAno < 0: 
-                grid_total.SetCellTextColour(row, 14, wx.RED)
-
-            grid_total.SetCellAlignment(row,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid_total.SetCellAlignment(row,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid_total.SetCellAlignment(row,  2, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid_total.SetCellAlignment(row,  3, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid_total.SetCellAlignment(row,  4, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid_total.SetCellAlignment(row,  5, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid_total.SetCellAlignment(row,  6, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid_total.SetCellAlignment(row,  7, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid_total.SetCellAlignment(row,  8, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid_total.SetCellAlignment(row,  9, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid_total.SetCellAlignment(row, 10, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid_total.SetCellAlignment(row, 11, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid_total.SetCellAlignment(row, 12, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid_total.SetCellAlignment(row, 13, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid_total.SetCellAlignment(row, 14, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-
-            if linha % 2 != 0:
-                for i in range(0, 15):
-                    grid_total.SetCellBackgroundColour(row, i, wx.Colour(230, 255, 255))
-
-        self.totalDisponivel = totalAporte - totalRetirada - totalDespesas + totalProventos + self.totalVendasReal - self.totalComprasReal
-        self.totalPatrimonio = self.totalDisponivel + self.totalCompradoReal
-
-        self.atualiza_valor('Total', "txtAporte", formata_numero(totalAporte))
-        self.atualiza_valor('Total', "txtRetirada", formata_numero(totalRetirada))
-        self.atualiza_valor('Total', "txtProvento", formata_numero(totalProventos))
-        self.atualiza_valor('Total', "txtRenda", formata_numero(totalRenda))
-        self.atualiza_valor('Total', "txtDespesa", formata_numero(totalDespesas))
-        self.atualiza_valor('Total', "txtResultado", formata_numero(totalResultado))
-        self.atualiza_valor('Total', "txtDisponivel", formata_numero(self.totalDisponivel))
-        self.atualiza_valor('Total', "txtComprado", formata_numero(self.totalCompradoReal))
-        self.atualiza_valor('Total', "txtPatrimonio", formata_numero(self.totalPatrimonio))
-
-    def atualiza_valor(self, nome_tab, campo, valor):
-        """Atualiza o valor de um campo na aba correta"""
-        trimmedCampo = str(campo).strip()
-        if nome_tab in self.tabs_data and trimmedCampo in self.tabs_data[nome_tab]:
-            self.tabs_data[nome_tab][trimmedCampo].SetValue(str(valor))
-
     def ponteiroGrid(self, nome_tab):
         if nome_tab in self.tabs_data and "grid" in self.tabs_data[nome_tab]:
             return self.tabs_data[nome_tab]["grid"]
@@ -1090,11 +890,6 @@ def main():
 
     app = wx.App(False)
     frame = FrmRendaDiaria()
-
-    # Exemplo de atualização de valores em diferentes abas
-    #frame.atualiza_valor("Total", "txtAporte", 5000)
-    #frame.atualiza_valor(frame.nome_conta[0], "txtAporte", 3000)
-    #frame.atualiza_valor(frame.nome_conta[2], "txtAporte", 2000)
 
     app.MainLoop()
 
