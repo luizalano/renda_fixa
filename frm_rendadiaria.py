@@ -1,0 +1,1102 @@
+#import wx
+from decimal import *
+import wx.grid
+from ativoNegociado import AtivoNegociado
+from cotacao import *
+from despesa import Despesa
+from conta import Conta
+from capital import Capital
+from diversos import *
+from collections import defaultdict
+from collections import deque
+
+from provento import Provento
+
+class FrmRendaDiaria(wx.Frame):
+    def __init__(self):
+        super().__init__(None, title="Consolidação de rendimentos - Renda Variável", size=(1350, 730),
+                         style=wx.DEFAULT_FRAME_STYLE & ~wx.RESIZE_BORDER & ~wx.MAXIMIZE_BOX)
+        self.SetPosition((1, 1))  # Define a posição inicial da janela
+
+        self.tabs_data = {}  # Dicionário para armazenar referências dos componentes por aba
+        self.dados_por_mes = {}   
+        self.dados_total = defaultdict(lambda: {
+            "aporte": zero,
+            "retirada": zero,
+            "rendimento": zero,
+            "provento": zero,
+            "despesa": zero,
+            "capital_base": zero,
+            "resultado_dia": zero,
+            "resultado_acumulado": zero,
+            "rend_pct": zero,
+            "renda_acumulada": zero,
+            "saldo_fim": zero,
+        })
+  
+        self.meses_expandidos = {}   
+        self.nome_conta = []
+        self.cotacao = []
+        self.listaMedas = []
+        self.listaContas = []
+        self.listaAtivos = []
+        self.listaDespesas = []
+        self.listaCapital = []
+        self.listaRetirada = []
+        self.listaRendaAcoes = []
+        self.listaRendaProventos = []
+        self.listaRendaDespesas = []
+        self.listaRendaMesMovel = deque(maxlen=12)
+        self.listaGeral = []
+        self.lan = []
+        self.proventos = []
+
+        self.listaCotacaoAtual = Decimal('1.0')
+        self.cotacaoAtual = Decimal('1.0')
+
+        self.totalComprado = Decimal('0.0')
+        self.totalCompras = Decimal('0.0')
+        self.totalVendas = Decimal('0.0')
+        self.totalCompradoReal = Decimal('0.0')
+        self.totalComprasReal = Decimal('0.0')
+        self.totalVendasReal = Decimal('0.0')
+
+        # Criar Notebook para abas
+        self.notebook = wx.Notebook(self)
+
+        # Criar a aba "Total" e componentes base
+        self.tab_total = wx.Panel(self.notebook)
+        self.notebook.AddPage(self.tab_total, "Total")
+        self.criaComponentes(self.tab_total, "Total")
+
+        self.meses_expandidos = {}
+
+
+        # Criar abas dinâmicas para cada conta
+        self.create_dynamic_tabs()
+
+        self.rendaTotal()
+
+        self.Show()
+
+    def novo_registro(self):
+        return {
+            "aporte": zero,
+            "retirada": zero,
+            "rendimento": zero,
+            "provento": zero,
+            "despesa": zero,
+            "capital_base": zero,
+            "resultado_dia": zero,
+            "resultado_acumulado": zero,
+            "rend_pct": zero,
+            "renda_acumulada": zero,
+            "saldo_fim": zero,
+        }
+
+    def criaComponentes(self, parent, nome_tab):
+        """Cria os componentes da aba e adiciona labels acima das caixas de texto"""
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Criar Grid
+        grid = wx.grid.Grid(parent, size=(1300, 550))
+        grid.CreateGrid(0, 15)
+        grid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.onRightClickGrid)
+
+
+        colunas = ["Ref", "Inicial", "Aporte", "Retirada", "Rendimento", "Provento",
+                   "Despesa", "Renda Mês", "Acumulado", "Saldo", "Renda %", "Acum %", "Média %", "12 meses", "12 média"]
+
+        for i, label in enumerate(colunas):
+            grid.SetColLabelValue(i, label)
+
+        sizer.Add(grid, 0, wx.ALL, 11)
+
+        self.tabs_data[nome_tab] = {}  # Garante que a aba existe no dicionário
+        self.tabs_data[nome_tab]["grid"] = grid  # Salva a referência da grid
+
+        # Lista com os nomes dos campos
+        labels = ["Aporte", "Retirada", "Provento", "Renda", "Despesa",
+                  "Resultado", "Disponivel", "Comprado", "Patrimonio"]
+
+        # Criar um sizer horizontal para alinhar os labels e textctrls
+        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        #self.tabs_data[nome_tab] = {}  # Dicionário para armazenar referências dos componentes desta aba
+
+        for label in labels:
+            v_sizer = wx.BoxSizer(wx.VERTICAL)  # Sizer para alinhar label e campo
+
+            # Criar Label
+            lbl = wx.StaticText(parent, label=label, size=(120, 20), style=wx.TE_RIGHT)  # Altura fixa para os labels
+            v_sizer.Add(lbl, 0, wx.ALIGN_CENTER | wx.BOTTOM, 2)
+
+            # Criar Campo de Entrada
+            #txt = wx.TextCtrl(parent, style=wx.TE_RIGHT, size=(120, -1))
+            txt = wx.TextCtrl(parent, style=wx.TE_RIGHT, size=(120, 25))  # Altura fixa para os campos
+            v_sizer.Add(txt, 0, wx.EXPAND)
+
+            self.tabs_data[nome_tab][f"txt{label}"] = txt  # Armazena o campo no dicionário
+
+            h_sizer.Add(v_sizer, 0, wx.ALL, 5)
+
+        sizer.Add(h_sizer, 0, wx.ALL | wx.EXPAND, 10)
+        parent.SetSizer(sizer)
+
+        #return grid
+
+    def onRightClickGrid(self, event):
+        grid = event.GetEventObject()
+        row = event.GetRow()
+
+        #valor = grid.GetCellValue(row, 0)
+        texto = grid.GetCellValue(row, 0)
+        valor = texto.replace(ICONE_FECHADO, "").replace(ICONE_ABERTO, "").strip()
+
+
+        # descobre o nome da aba a partir do grid
+        nome_tab = None
+        for tab, data in self.tabs_data.items():
+            if data.get("grid") is grid:
+                nome_tab = tab
+                break
+
+        if nome_tab is None:
+            return
+
+        # só reage a linhas de mês
+        if "/" in valor and len(valor) == 7:  # "YYYY/MM"
+            menu = wx.Menu()
+
+            if valor in self.meses_expandidos:
+                item = menu.Append(wx.ID_ANY, "Recolher dias")
+            else:
+                item = menu.Append(wx.ID_ANY, "Expandir dias")
+
+            self.Bind(
+                wx.EVT_MENU,
+                lambda evt, mes=valor, tab=nome_tab: self.toggleMes(mes, tab),
+                item
+            )
+
+            grid.PopupMenu(menu)
+            menu.Destroy()
+
+    def toggleMes(self, mes, nome_tab):
+        if nome_tab not in self.meses_expandidos:
+            self.meses_expandidos[nome_tab] = set()
+
+        if mes in self.meses_expandidos[nome_tab]:
+            self.meses_expandidos[nome_tab].remove(mes)
+        else:
+            self.meses_expandidos[nome_tab].add(mes)
+
+        self.montaGrid(nome_tab)
+
+
+    def create_dynamic_tabs(self):
+        contas = Conta.mc_busca_contas_e_ultimacotacao()
+
+        for id_conta, nomeconta, nomemoeda, cotacaoMoeda in contas:
+            if cotacaoMoeda is None:
+                valor = Decimal(1.0)
+            else:
+                valor = cotacaoMoeda
+            self.listaContas.append([id_conta, nomeconta, nomemoeda, valor])
+
+            tab = wx.Panel(self.notebook)
+            self.notebook.AddPage(tab, nomeconta)
+
+            # cria os componentes e retorna o grid
+            grid = self.criaComponentes(tab, nomeconta)
+
+            # adiciona informações extras na aba
+            self.tabs_data[nomeconta]["id"] = id_conta
+            self.tabs_data[nomeconta]["moeda"] = nomemoeda
+            self.tabs_data[nomeconta]["cotacao"] = valor #devolveFloatDeDecimal(valor, 6)
+
+    def removeTab(self, nome_tab):
+        """Remove uma aba do Notebook pelo nome"""
+        for index in range(self.notebook.GetPageCount()):
+            if self.notebook.GetPageText(index) == nome_tab:
+                self.notebook.RemovePage(index)
+                return  # Para evitar problemas ao alterar os índices dinamicamente
+
+    def encheListaCotacao(self):
+        listaMoedas = Cotacao.getListaMoedas()
+        cotacao = 0.0
+        for nomemoeda, id in listaMoedas:
+            if nomemoeda == 'REAL':
+                cotacao, nome = 1, nomemoeda
+            else:
+                cotacao, nome = Cotacao.mc_get_ultima_cotacao(id)
+            self.cotacao.append([id, nomemoeda, cotacao])
+
+    def buscaCotacao(self, conta):
+        cotacao = 1.0
+        for row in self.listaContas:
+            if row[0] == conta:
+                nomeMoeda = row[2]
+                for linha in self.cotacao:
+                    if linha[1] == nomeMoeda:
+                        cotacao = linha[2]
+                        break
+        return cotacao
+
+    def rendaTotal(self):
+        
+        #self.dados_por_mes = defaultdict(lambda: {
+        #    "dias": defaultdict(self.novo_registro),
+        #    "consolidado": self.novo_registro()
+        #})
+
+        self.dados_por_mes.clear()
+
+        for row in self.listaContas:
+            id_conta = row[0]
+            nome_tab = row[1]
+
+            self.dados_por_mes[nome_tab] = defaultdict(lambda: {
+                "dias": defaultdict(self.novo_registro),
+                "consolidado": self.novo_registro()
+            })
+
+            self.listaAtivos = AtivoNegociado.mc_devolve_id_ativo_negociado_por_conta(idconta=row[0])
+            if len(self.listaAtivos) == 0:
+                self.removeTab(row[1])
+            else:
+                self.listaGeral.clear()
+                self.listaRendaMesMovel.clear()
+                self.cotacaoAtual = row[3]  #devolveFloatDeDecimal(row[3], 2)
+                self.buscaRendaPorAtivo(row[0], nome_tab)
+                self.buscaDespesas(row[0], nome_tab)
+                self.buscaCapital(row[0], nome_tab)
+                self.calcula_rendimento_diario(nome_tab)
+                self.consolida_por_mes(nome_tab)
+                self.consolida_percentual_mensal(nome_tab)
+                self.montaGrid(nome_tab)
+
+        self.consolida_total()
+        self.montaGridTotal()
+
+    def buscaRendaPorAtivo(self, idconta, nome_tab):
+        """
+        Processa todos os ativos da conta, acumulando:
+        - rendimentos por DIA
+        - proventos por DIA
+        - totais de comprado, compras e vendas
+
+        NÃO consolida por mês
+        NÃO mexe em grid
+        """
+
+        # ==========================
+        # ZERA ESTADO DA CONTA
+        # ==========================
+
+        self.totalComprado = zero
+        self.totalCompras = zero
+        self.totalVendas = zero
+
+        self.totalCompradoReal = zero
+        self.totalComprasReal = zero
+        self.totalVendasReal = zero
+
+        # ==========================
+        # PROCESSA ATIVOS
+        # ==========================
+        for ativo in self.listaAtivos:
+            id_ativo = ativo[0]
+
+            # lançamentos de compra/venda
+            lancamentos = AtivoNegociado.mc_devolve_lancamentos_ativo__por_conta(
+                idativo=id_ativo,
+                idconta=idconta
+            )
+
+            # proventos pagos
+            proventos = Provento.mc_busca_proventos_por_conta_ativo(
+                id_ativo, idconta, True
+            )
+
+            comprado, compras, vendas = self._processa_lancamentos_ativo(lancamentos, nome_tab)
+            self._processa_proventos_ativo(proventos, nome_tab)
+
+            # ==========================
+            # TOTAIS DA CONTA
+            # ==========================
+            self.totalComprado += comprado
+            self.totalCompras += compras
+            self.totalVendas += vendas
+
+            self.totalCompradoReal += comprado * self.cotacaoAtual
+            self.totalComprasReal += compras * self.cotacaoAtual
+            self.totalVendasReal += vendas * self.cotacaoAtual
+
+    def _processa_lancamentos_ativo(self, lancamentos, nome_tab):
+        saldo_qtde = 0
+        preco_medio = zero
+
+        compras = zero
+        vendas = zero
+        comprado = zero
+
+        for row in lancamentos:
+            data = row[1]
+            operacao = int(row[2])   # 1 compra / 2 venda
+            qtde = int(row[3])
+            preco = row[4]
+
+            dia = data.strftime("%Y/%m/%d")
+            mes = data.strftime("%Y/%m")
+
+            if operacao == 1:  # COMPRA
+                total = qtde * preco
+                compras += total
+
+                if saldo_qtde > 0:
+                    preco_medio = ((preco_medio * saldo_qtde) + total) / (saldo_qtde + qtde)
+                else:
+                    preco_medio = preco
+
+                saldo_qtde += qtde
+
+            else:  # VENDA
+                total = qtde * preco
+                vendas += total
+
+                resultado = total - (qtde * preco_medio)
+
+                saldo_qtde -= qtde
+                if saldo_qtde == 0:
+                    preco_medio = zero
+
+                if resultado != 0:
+                    self.dados_por_mes[nome_tab][mes]["dias"][dia]["rendimento"] += resultado
+
+        comprado = saldo_qtde * preco_medio
+        return comprado, compras, vendas
+
+    def _processa_proventos_ativo(self, proventos, nome_tab):
+        for row in proventos:
+            data = row[1]
+            valor = row[2]
+
+            dia = data.strftime("%Y/%m/%d")
+            mes = data.strftime("%Y/%m")
+
+            self.dados_por_mes[nome_tab][mes]["dias"][dia]["provento"] += valor
+
+    def getCotacaoTab(self, nomeTab):
+        """
+        Retorna a cotação associada a uma aba pelo nome.
+        Se não existir ou não tiver cotação, retorna 1.
+        """
+        if nomeTab in self.tabs_data:
+            return self.tabs_data[nomeTab].get("cotacao", 1)
+        return Decimal('1.0')
+
+    def encheListaRendaAcoes(self):
+        saldoQtde = 0
+        precomedio = Decimal('0.0')
+        compras = Decimal('0.0')
+        vendas = Decimal('0.0')
+        listaProvisoria = []
+        for  row in self.lan:
+            dataOperacao = row[1]
+            numoperacao = int(row[2])
+            valorOperacao = row[4]  #devolveFloatDeDecimal(row[4], 2) 
+            qtdeOperacao = int(row[3])
+            if numoperacao == 1:
+                totalOperacao = qtdeOperacao * valorOperacao
+                compras += totalOperacao
+                if precomedio > 0:
+                    precomedio = ((precomedio * saldoQtde) + totalOperacao) / (saldoQtde + qtdeOperacao)
+                else:
+                    precomedio = valorOperacao
+                    
+                saldoQtde += qtdeOperacao
+
+            else:
+                totalOperacao = valorOperacao * qtdeOperacao
+                vendas += totalOperacao
+                resultado = totalOperacao - (qtdeOperacao * precomedio)
+
+                saldoQtde -= qtdeOperacao
+                if saldoQtde == 0:
+                    precomedio = Decimal('0.0')
+
+                if resultado != Decimal('0.0'):
+                    listaProvisoria.append([dataOperacao, resultado])
+                
+        comprado = saldoQtde * precomedio
+
+        for row in listaProvisoria:
+            dataOperacao = row[0].strftime("%Y/%m/%d")
+            valorRendimento = row[1] #devolveFloatDeDecimal(row[1], 2) 
+            if len(self.listaRendaAcoes) == 0:
+                self.listaRendaAcoes.append([dataOperacao, valorRendimento])
+            else:
+                indice = next((i for i, linha in enumerate(self.listaRendaAcoes) if linha[0] == dataOperacao), -1)
+                if indice < 0:
+                    self.listaRendaAcoes.append([dataOperacao, valorRendimento])
+                else:
+                    self.listaRendaAcoes[indice][1] += valorRendimento
+        return comprado, compras, vendas
+
+    def encheListaRendaProventos(self):
+        for row in self.proventos:
+            dataOperacao = row[1].strftime("%Y/%m/%d")
+            valorRendimento = row[2] #devolveFloatDeDecimal(row[2], 2) 
+            if len(self.listaRendaProventos) == 0:
+                self.listaRendaProventos.append([dataOperacao, valorRendimento])
+            else:
+                for item in self.listaRendaProventos:
+                    if item[0] == dataOperacao:
+                        item[1] += valorRendimento
+                        break
+                else:
+                    self.listaRendaProventos.append([dataOperacao, valorRendimento])
+
+    def buscaDespesas(self, idconta, nome_tab):
+        
+        lista = Despesa.mc_busca_despesas_por_conta(idconta)
+        for row in lista:
+            data = row[0]
+            valor = row[1]
+
+            dia = data.strftime("%Y/%m/%d")
+            mes = data.strftime("%Y/%m")
+
+            self.dados_por_mes[nome_tab][mes]["dias"][dia]["despesa"] += valor
+
+    def buscaCapital(self, idconta, nome_tab):
+        
+        #Processa aportes e retiradas da conta.
+        #Registra valores POR DIA dentro de self.dados_por_mes.
+        
+
+        lista = Capital.mc_busca_capital_por_conta(idconta)
+
+        for row in lista:
+            data = row[0]
+            valor = row[1]
+
+            dia = data.strftime("%Y/%m/%d")
+            mes = data.strftime("%Y/%m")
+
+            if valor >= 0:
+                self.dados_por_mes[nome_tab][mes]["dias"][dia]["aporte"] += valor
+            else:
+                # retirada sempre positiva no modelo
+                self.dados_por_mes[nome_tab][mes]["dias"][dia]["retirada"] += valor * -1
+
+    def juntaListas(self):
+        for ref, valor in self.listaCapital:
+            if len(self.listaGeral) == 0:
+                #self.listaGeral.append([[ref], [valor], [], [], [], []])
+                self.listaGeral.append([ref, valor, 0, 0, 0, 0])
+            else:
+                linha = (-1)
+                for item in self.listaGeral:
+                    linha += 1
+                    if item[0] == ref:
+                        self.listaGeral[linha][1] = valor
+                        break
+                else:
+                    self.listaGeral.append([ref, valor, 0, 0, 0, 0])
+
+        for ref, valor in self.listaRetirada:
+            if len(self.listaGeral) == 0:
+                self.listaGeral.append([ref, 0, valor, 0, 0, 0])
+            else:
+                linha = (-1)
+                for item in self.listaGeral:
+                    linha += 1
+                    if item[0] == ref:
+                        self.listaGeral[linha][2] = valor
+                        break
+                else:
+                    self.listaGeral.append([ref, 0, valor, 0, 0, 0])
+
+        for ref, valor in self.listaRendaAcoes:
+            if len(self.listaGeral) == 0:
+                self.listaGeral.append([ref, 0, 0, valor, 0, 0])
+            else:
+                linha = (-1)
+                for item in self.listaGeral:
+                    linha += 1
+                    if item[0] == ref:
+                        self.listaGeral[linha][3] = valor
+                        break
+                else:
+                    self.listaGeral.append([ref, 0, 0, valor, 0, 0])
+
+        for ref, valor in self.listaRendaProventos:
+            if len(self.listaGeral) == 0:
+                self.listaGeral.append([ref, 0, 0, 0, valor, 0])
+            else:
+                linha = (-1)
+                for item in self.listaGeral:
+                    linha += 1
+                    if item[0] == ref:
+                        self.listaGeral[linha][4] = valor
+                        break
+                else:
+                    self.listaGeral.append([ref, 0, 0, 0, valor, 0])
+
+        for ref, valor in self.listaDespesas:
+            if len(self.listaGeral) == 0:
+                self.listaGeral.append([ref, 0, 0, 0, 0, valor])
+            else:
+                linha = (-1)
+                for item in self.listaGeral:
+                    linha += 1
+                    if item[0] == ref:
+                        self.listaGeral[linha][5] = valor
+                        break
+                else:
+                    self.listaGeral.append([ref, 0, 0, 0, 0, valor])
+
+    def devolve_renda_media_movel(self, rendimento_mes):
+        # adiciona o novo rendimento (já faz o shift automático se passar de 12)
+        self.listaRendaMesMovel.append(rendimento_mes)
+
+        # cálculo do acumulado geométrico
+        rendaPercAcm = 1.0
+        for r in self.listaRendaMesMovel:
+            rendaPercAcm *= (1 + r)
+        rendaPercAcm -= 1
+
+        # cálculo da média geométrica equivalente
+        rendaMedia = (1 + rendaPercAcm) ** (1 / len(self.listaRendaMesMovel)) - 1
+
+        # retorna apenas os cálculos, a lista já foi atualizada por referência
+        return rendaMedia, rendaPercAcm
+
+    def montaGrid(self, nometab):
+        grid = self.ponteiroGrid(nometab)
+
+        grid.ClearGrid()
+        if grid.GetNumberRows() > 0:
+            grid.DeleteRows(0, grid.GetNumberRows())
+
+        linha = -1
+        rendaAcumulada = zero
+        rendPercAcm = zero
+
+        saldo = zero
+
+        for mes in sorted(self.dados_por_mes[nometab].keys()):
+            dados = self.dados_por_mes[nometab][mes]
+            cons = dados["consolidado"]
+
+            aporte = cons["aporte"]
+            retirada = cons["retirada"]
+            rendimento = cons["rendimento"]
+            provento = cons["provento"]
+            despesa = cons["despesa"]
+
+            rendaMes = rendimento + provento - despesa
+            rendaAcumulada += rendaMes
+
+            ultimo_dia = sorted(dados["dias"].keys())[-1]
+            saldo = dados["dias"][ultimo_dia]["saldo_fim"]
+
+            rend_mensal = cons["rend_pct"]
+
+            if linha >= 0:
+                rendPercAcm = (Decimal("1") + rend_mensal) * (Decimal("1") + rendPercAcm) - Decimal("1")
+            else:
+                rendPercAcm = rend_mensal
+
+            linha += 1
+            grid.AppendRows(1)
+
+            #grid.SetCellValue(linha, 0, mes)
+            meses_abertos = self.meses_expandidos.get(nometab, set())
+            icone = ICONE_ABERTO if mes in meses_abertos else ICONE_FECHADO
+
+            grid.SetCellValue(linha, 0, f"{icone} {mes}")
+
+            grid.SetCellValue(linha, 1, formata_numero(saldo - rendaMes))
+            grid.SetCellValue(linha, 2, formata_numero(aporte))
+            grid.SetCellValue(linha, 3, formata_numero(retirada))
+            grid.SetCellValue(linha, 4, formata_numero(rendimento))
+            grid.SetCellValue(linha, 5, formata_numero(provento))
+            grid.SetCellValue(linha, 6, formata_numero(despesa))
+            grid.SetCellValue(linha, 7, formata_numero(rendaMes))
+            grid.SetCellValue(linha, 8, formata_numero(rendaAcumulada))
+            grid.SetCellValue(linha, 9, formata_numero(saldo))
+            grid.SetCellValue(linha,10, formata_numero(rend_mensal * 100))
+            grid.SetCellValue(linha,11, formata_numero(rendPercAcm * 100))
+
+            grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  2, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  3, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  4, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  5, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  6, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  7, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  8, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  9, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha, 10, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 11, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 12, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 13, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 14, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+
+            if linha % 2 != 0:
+                for i in range(0, 15):
+                    grid.SetCellBackgroundColour(linha, i, wx.Colour(cor_azulzinho))
+
+            # marca visualmente linha de mês
+            grid.SetCellFont(linha, 0, wx.Font(9, wx.FONTFAMILY_DEFAULT,
+                                            wx.FONTSTYLE_NORMAL,
+                                            wx.FONTWEIGHT_BOLD))
+
+            # ---- DIAS DO MÊS (se expandido) ----
+            
+            if mes in meses_abertos:
+                for dia in sorted(dados["dias"].keys()):
+                    d = dados["dias"][dia]
+
+                    linha += 1
+                    grid.AppendRows(1)
+
+                    grid.SetCellValue(linha, 0, "   " + dia)
+                    grid.SetCellValue(linha, 1, formata_numero(d["capital_base"]))
+                    grid.SetCellValue(linha, 2, formata_numero(d["aporte"]))
+                    grid.SetCellValue(linha, 3, formata_numero(d["retirada"]))
+                    grid.SetCellValue(linha, 4, formata_numero(d["rendimento"]))
+                    grid.SetCellValue(linha, 5, formata_numero(d["provento"]))
+                    grid.SetCellValue(linha, 6, formata_numero(d["despesa"]))
+                    grid.SetCellValue(linha, 7, formata_numero(d["resultado_dia"]))
+                    grid.SetCellValue(linha, 8, formata_numero(d["resultado_acumulado"]))
+                    grid.SetCellValue(linha, 9, formata_numero(d["saldo_fim"]))
+                    grid.SetCellValue(linha,10, formata_numero(d["rend_pct"] * 100))
+                    grid.SetCellValue(linha,11, formata_numero(d["renda_acumulada"] * 100))
+
+                    grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+                    grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+                    grid.SetCellAlignment(linha,  2, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+                    grid.SetCellAlignment(linha,  3, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+                    grid.SetCellAlignment(linha,  4, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+                    grid.SetCellAlignment(linha,  5, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+                    grid.SetCellAlignment(linha,  6, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+                    grid.SetCellAlignment(linha,  7, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+                    grid.SetCellAlignment(linha,  8, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+                    grid.SetCellAlignment(linha,  9, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+                    grid.SetCellAlignment(linha, 10, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+                    grid.SetCellAlignment(linha, 11, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+                    grid.SetCellAlignment(linha, 12, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+                    grid.SetCellAlignment(linha, 13, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+                    grid.SetCellAlignment(linha, 14, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+
+                    if linha % 2 != 0:
+                        for i in range(0, 15):
+                            grid.SetCellBackgroundColour(linha, i, wx.Colour(cor_verdinho))
+
+                    grid.SetCellTextColour(linha, 0, wx.Colour(90, 90, 90))
+
+    def montaGridTotal(self):
+        grid = self.ponteiroGrid('Total')
+
+        grid.ClearGrid()
+        if grid.GetNumberRows() > 0:
+            grid.DeleteRows(0, grid.GetNumberRows())
+
+        linha = -1
+        rendaAcumulada = zero
+        rendPercAcm = zero
+
+        saldo = zero
+
+        for mes in sorted(self.dados_total.keys()):
+            cons = self.dados_total[mes]
+
+            aporte = cons["aporte"]
+            retirada = cons["retirada"]
+            rendimento = cons["rendimento"]
+            provento = cons["provento"]
+            despesa = cons["despesa"]
+
+            rendaMes = rendimento + provento - despesa
+            rendaAcumulada += rendaMes
+
+            rend_mensal = cons["rend_pct"]
+
+            if linha >= 0:
+                rendPercAcm = (Decimal("1") + rend_mensal) * (Decimal("1") + rendPercAcm) - Decimal("1")
+            else:
+                rendPercAcm = rend_mensal
+
+            linha += 1
+            grid.AppendRows(1)
+
+            grid.SetCellValue(linha, 0, f"{mes}")
+            grid.SetCellValue(linha, 1, formata_numero(saldo - rendaMes))   # Errado
+            grid.SetCellValue(linha, 2, formata_numero(aporte))
+            grid.SetCellValue(linha, 3, formata_numero(retirada))
+            grid.SetCellValue(linha, 4, formata_numero(rendimento))
+            grid.SetCellValue(linha, 5, formata_numero(provento))
+            grid.SetCellValue(linha, 6, formata_numero(despesa))
+            grid.SetCellValue(linha, 7, formata_numero(rendaMes))
+            grid.SetCellValue(linha, 8, formata_numero(rendaAcumulada))
+            grid.SetCellValue(linha, 9, formata_numero(saldo))
+            grid.SetCellValue(linha,10, formata_numero(rend_mensal * 100))
+            grid.SetCellValue(linha,11, formata_numero(rendPercAcm * 100))
+
+            grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  2, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  3, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  4, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  5, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  6, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  7, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  8, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha,  9, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid.SetCellAlignment(linha, 10, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 11, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 12, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 13, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid.SetCellAlignment(linha, 14, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+
+            if linha % 2 != 0:
+                for i in range(0, 15):
+                    grid.SetCellBackgroundColour(linha, i, wx.Colour(cor_azulzinho))
+
+
+    def calcula_rendimento_diario(self, nome_tab):
+        
+        #Calcula rendimento diário correto, considerando:
+        #- aportes e retiradas alteram capital base
+        #- compras e vendas NÃO alteram capital base
+        #- rendimento percentual diário é calculado sobre o capital do dia
+        #
+
+        saldo_corrente = zero
+
+        # percorre meses e dias em ordem cronológica
+        for mes in sorted(self.dados_por_mes[nome_tab].keys()):
+            dias = self.dados_por_mes[nome_tab][mes]["dias"]
+            resultado_acumulado = zero
+            renda_acumulada = zero
+            for dia in sorted(dias.keys()):
+                d = dias[dia]
+
+                aporte = d["aporte"]
+                retirada = d["retirada"]
+                rendimento = d["rendimento"]
+                provento = d["provento"]
+                despesa = d["despesa"]
+
+                # capital disponível no início do dia
+                capital_base = saldo_corrente + aporte - retirada
+
+                # resultado financeiro do dia
+                resultado_dia = rendimento + provento - despesa
+                resultado_acumulado += resultado_dia
+
+                # rendimento percentual diário
+                if capital_base != 0:
+                    rend_pct = resultado_dia / capital_base
+                else:
+                    rend_pct = zero
+                renda_acumulada = (1 + renda_acumulada) * (1 + rend_pct) - 1
+                # saldo final do dia
+                saldo_fim = capital_base + resultado_dia
+
+                # grava no modelo
+                d["capital_base"] = capital_base
+                d["resultado_dia"] = resultado_dia
+                d["rend_pct"] = rend_pct
+                d["saldo_fim"] = saldo_fim
+                d["resultado_acumulado"] = resultado_acumulado
+                d["renda_acumulada"] = renda_acumulada
+
+                # prepara para o próximo dia
+                saldo_corrente = saldo_fim
+
+    def consolida_por_mes(self, nome_tab):
+        # """
+        # Consolida os valores diários em totais mensais.
+        # Deve ser chamada APÓS:
+        # - buscaRendaPorAtivo
+        # - buscaCapital
+        # - buscaDespesas
+        # """
+
+        for mes, dados in self.dados_por_mes[nome_tab].items():
+            consolidado = dados["consolidado"]
+
+            # zera explicitamente (segurança)
+            for campo in consolidado:
+                consolidado[campo] = zero
+
+            # soma todos os dias do mês
+            for dia, valores in dados["dias"].items():
+                for campo in consolidado:
+                    consolidado[campo] += valores[campo]
+
+    def consolida_percentual_mensal(self, nome_tab):
+        """
+        Consolida o rendimento percentual mensal
+        a partir da composição dos rendimentos diários.
+        """
+
+        for mes, dados in self.dados_por_mes[nome_tab].items():
+            dias = dados["dias"]
+
+            fator = zero
+            for dia in sorted(dias.keys()):
+                fator = ((um + fator) * (um + dias[dia]["rend_pct"])) - um
+
+            dados["consolidado"]["rend_pct"] = fator
+
+    def consolida_total(self):
+        """
+        Consolida todas as contas na aba Total,
+        convertendo valores para reais conforme cotação.
+        """
+
+        self.dados_total.clear()
+
+        # cria mapa nome_conta -> cotacao
+        cotacoes = {
+            row[1]: Decimal(row[3])
+            for row in self.listaContas
+        }
+
+        for nome_tab, dados_conta in self.dados_por_mes.items():
+
+            # ignora a própria aba Total, se existir
+            if nome_tab == "Total":
+                continue
+
+            cotacao = cotacoes.get(nome_tab, Decimal("1"))
+
+            for mes, dados in dados_conta.items():
+                cons = dados["consolidado"]
+
+                self.dados_total[mes]["aporte"] += cons["aporte"] * cotacao
+                self.dados_total[mes]["retirada"] += cons["retirada"] * cotacao
+                self.dados_total[mes]["rendimento"] += cons["rendimento"] * cotacao
+                self.dados_total[mes]["provento"] += cons["provento"] * cotacao
+                self.dados_total[mes]["despesa"] += cons["despesa"] * cotacao
+
+
+
+    def consolidaRendimentos(self):
+        """
+        Consolida os valores das abas individuais na aba 'Total'.
+        Soma por data e aplica a cotação de cada conta.
+        """
+
+        # garante que a aba Total existe
+        if "Total" not in self.tabs_data:
+            return
+
+        grid_total = self.tabs_data["Total"]["grid"]
+
+        # dicionário: {data: {coluna: valor}}
+        consolidados = {}
+
+        # percorre todas as abas (menos a Total)
+        for nome_tab, componentes in self.tabs_data.items():
+            if nome_tab == "Total":
+                continue
+
+            grid = componentes["grid"]
+            cotacao = componentes.get("cotacao", 1)
+
+            # percorre as linhas da grid
+            for row in range(grid.GetNumberRows()):
+                data = grid.GetCellValue(row, 0).strip()
+                if not data:
+                    continue
+
+                if data not in consolidados:
+                    consolidados[data] = {"Inicial": 0,"Aporte": 0,"Retirada": 0,"Rendimento": 0,"Provento": 0,"Despesa": 0,}
+
+                # mapeia colunas fixas
+                for col_nome, col_idx in {"Inicial": 1,"Aporte": 2,"Retirada": 3,"Rendimento": 4,"Provento": 5,"Despesa": 6,}.items():
+                    valor_str = grid.GetCellValue(row, col_idx)
+                    valor_str = valor_str.replace(".", "")
+                    valor_str = valor_str.replace(",", ".")
+                    #valor_str = grid.GetCellValue(row, col_idx).replace(",", ".")
+                    try:
+                        valor = Decimal(valor_str) if valor_str else zero
+                    except ValueError:
+                        valor = zero
+                    if valor == 0:
+                        valor = Decimal('0.00')
+                    consolidados[data][col_nome] += valor * cotacao
+
+        # limpa a grid Total
+        grid_total.ClearGrid()
+        if grid_total.GetNumberRows() > 0:
+            grid_total.DeleteRows(0, grid_total.GetNumberRows())
+
+        # insere as linhas consolidadas ordenadas por data
+        for data in sorted(consolidados.keys()):
+            linha = grid_total.GetNumberRows()
+            grid_total.AppendRows(1)
+            grid_total.SetCellValue(linha, 0, data)
+
+            grid_total.SetCellValue(linha, 1, f"{consolidados[data]['Inicial']:.2f}")
+            grid_total.SetCellValue(linha, 2, f"{consolidados[data]['Aporte']:.2f}")
+            grid_total.SetCellValue(linha, 3, f"{consolidados[data]['Retirada']:.2f}")
+            grid_total.SetCellValue(linha, 4, f"{consolidados[data]['Rendimento']:.2f}")
+            grid_total.SetCellValue(linha, 5, f"{consolidados[data]['Provento']:.2f}")
+            grid_total.SetCellValue(linha, 6, f"{consolidados[data]['Despesa']:.2f}")
+
+        # aqui você pode recalcular as demais colunas da aba Total (Renda Mês, Acumulado, % etc)
+
+        linha = (-1)
+        rendaAcumulada = zero
+        inicial = zero
+        saldo = zero
+        rendPercAcm = 0.0
+        rendaMedia = 0.0
+
+        totalAporte  = zero       
+        totalRetirada = zero
+        totalProventos = zero
+        totalRenda = zero
+        totalDespesas = zero
+        totalResultado = zero
+
+        for row in range(grid_total.GetNumberRows()):
+            
+            linha += 1
+            aporte = devolveDecimalDeFloat(grid_total.GetCellValue(row, 2), 2)
+            retirada = devolveDecimalDeFloat(grid_total.GetCellValue(row, 3), 2)
+            rendimento = devolveDecimalDeFloat(grid_total.GetCellValue(row, 4), 2)
+            provento = devolveDecimalDeFloat(grid_total.GetCellValue(row, 5), 2)
+            despesa = devolveDecimalDeFloat(grid_total.GetCellValue(row, 6), 2)
+            rendaMes = rendimento + provento - despesa
+
+            inicial = saldo + aporte - retirada
+            saldo = inicial + rendimento + provento - despesa
+            rendaAcumulada = rendaAcumulada + rendimento + provento - despesa
+            if inicial != zero:
+                auxdecimal = ((inicial + rendimento + provento - despesa) / inicial) -1
+                rendperc = devolveFloatDeDecimal(auxdecimal, 6)  
+            else:
+                rendperc = 0.0
+            if linha > 0:
+               rendPercAcm = (1 + rendperc) * (1 + rendPercAcm) - 1
+               rendaMedia = ((1 + rendPercAcm) ** (1 / (linha + 1))) - 1
+            else:
+               rendPercAcm = rendperc
+               rendaMedia = rendperc
+
+            rendaMediaAno, rendaAno = self.devolve_renda_media_movel(rendperc)
+
+            totalAporte += aporte
+            totalRetirada += retirada
+            totalProventos += provento
+            totalRenda += rendimento
+            totalDespesas += despesa
+            totalResultado += rendaMes
+
+            #rendimento = float(int(rendimento * 100.0) / 100.0)
+
+            grid_total.SetCellValue(row, 1, formata_numero(inicial))
+            grid_total.SetCellValue(row, 2, formata_numero(aporte))
+            grid_total.SetCellValue(row, 3, formata_numero(retirada))
+            grid_total.SetCellValue(row, 4, formata_numero(rendimento))
+            if rendimento < 0 : grid_total.SetCellTextColour(row, 4, wx.RED)
+            grid_total.SetCellValue(row, 5, formata_numero(provento))
+            grid_total.SetCellValue(row, 6, formata_numero(despesa))
+            grid_total.SetCellValue(linha, 7, formata_numero(rendaMes))
+            if rendaMes < 0: grid_total.SetCellTextColour(row, 7, wx.RED)
+            grid_total.SetCellValue(row, 8, formata_numero(rendaAcumulada))
+            if rendaAcumulada < 0: grid_total.SetCellTextColour(row, 8, wx.RED)
+            grid_total.SetCellValue(row, 9, formata_numero(saldo))
+            grid_total.SetCellValue(row, 10, formata_numero(rendperc * 100.0))
+            if rendperc < 0: grid_total.SetCellTextColour(row, 10, wx.RED)
+            grid_total.SetCellValue(row, 11, formata_numero(rendPercAcm * 100.0))
+            if rendPercAcm < 0: grid_total.SetCellTextColour(row, 11, wx.RED)
+            grid_total.SetCellValue(row, 12, formata_numero(rendaMedia * 100.0))
+            if rendaMedia < 0: 
+                grid_total.SetCellTextColour(row, 12, wx.RED)
+            grid_total.SetCellValue(row, 13, formata_numero(rendaAno * 100.0))
+            if rendaAno < 0: 
+                grid_total.SetCellTextColour(row, 13, wx.RED)
+            grid_total.SetCellValue(row, 14, formata_numero(rendaMediaAno * 100.0))
+            if rendaMediaAno < 0: 
+                grid_total.SetCellTextColour(row, 14, wx.RED)
+
+            grid_total.SetCellAlignment(row,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid_total.SetCellAlignment(row,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid_total.SetCellAlignment(row,  2, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid_total.SetCellAlignment(row,  3, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid_total.SetCellAlignment(row,  4, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid_total.SetCellAlignment(row,  5, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid_total.SetCellAlignment(row,  6, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid_total.SetCellAlignment(row,  7, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid_total.SetCellAlignment(row,  8, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid_total.SetCellAlignment(row,  9, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            grid_total.SetCellAlignment(row, 10, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid_total.SetCellAlignment(row, 11, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid_total.SetCellAlignment(row, 12, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid_total.SetCellAlignment(row, 13, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            grid_total.SetCellAlignment(row, 14, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+
+            if linha % 2 != 0:
+                for i in range(0, 15):
+                    grid_total.SetCellBackgroundColour(row, i, wx.Colour(230, 255, 255))
+
+        self.totalDisponivel = totalAporte - totalRetirada - totalDespesas + totalProventos + self.totalVendasReal - self.totalComprasReal
+        self.totalPatrimonio = self.totalDisponivel + self.totalCompradoReal
+
+        self.atualiza_valor('Total', "txtAporte", formata_numero(totalAporte))
+        self.atualiza_valor('Total', "txtRetirada", formata_numero(totalRetirada))
+        self.atualiza_valor('Total', "txtProvento", formata_numero(totalProventos))
+        self.atualiza_valor('Total', "txtRenda", formata_numero(totalRenda))
+        self.atualiza_valor('Total', "txtDespesa", formata_numero(totalDespesas))
+        self.atualiza_valor('Total', "txtResultado", formata_numero(totalResultado))
+        self.atualiza_valor('Total', "txtDisponivel", formata_numero(self.totalDisponivel))
+        self.atualiza_valor('Total', "txtComprado", formata_numero(self.totalCompradoReal))
+        self.atualiza_valor('Total', "txtPatrimonio", formata_numero(self.totalPatrimonio))
+
+    def atualiza_valor(self, nome_tab, campo, valor):
+        """Atualiza o valor de um campo na aba correta"""
+        trimmedCampo = str(campo).strip()
+        if nome_tab in self.tabs_data and trimmedCampo in self.tabs_data[nome_tab]:
+            self.tabs_data[nome_tab][trimmedCampo].SetValue(str(valor))
+
+    def ponteiroGrid(self, nome_tab):
+        if nome_tab in self.tabs_data and "grid" in self.tabs_data[nome_tab]:
+            return self.tabs_data[nome_tab]["grid"]
+        else:
+            return None
+
+    def listaGridsAtivos(self):
+        """Retorna uma lista com os ponteiros das grids das tabs ativas."""
+        grids_ativos = []
+
+        for nome_tab, componentes in self.tabs_data.items():
+            if "grid" in componentes:
+                grids_ativos.append(componentes["grid"])
+
+        return grids_ativos
+
+def main():
+
+    app = wx.App(False)
+    frame = FrmRendaDiaria()
+
+    # Exemplo de atualização de valores em diferentes abas
+    #frame.atualiza_valor("Total", "txtAporte", 5000)
+    #frame.atualiza_valor(frame.nome_conta[0], "txtAporte", 3000)
+    #frame.atualiza_valor(frame.nome_conta[2], "txtAporte", 2000)
+
+    app.MainLoop()
+
+if __name__ == '__main__':
+    main()

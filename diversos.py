@@ -17,6 +17,9 @@ cor_amarelinho = wx.Colour(255, 255, 179)
 cor_cinzaclaro = wx.Colour(210, 219, 180)
 cem = Decimal('100.0')
 zero = Decimal('0.0')
+um = Decimal('1.0')
+ICONE_FECHADO = "▸"
+ICONE_ABERTO = "▼"
 
 def redimensionaBitMap(bitmapin, largura, altura):
     imagem = bitmapin.ConvertToImage()
