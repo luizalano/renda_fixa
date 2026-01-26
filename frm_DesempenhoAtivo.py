@@ -1,7 +1,7 @@
 # coding: utf-8
 from frm_notaNegociacao import FrmNotaNegociacao
 from frm_radar import *
-from frm_rendaTotal import *
+from frm_rendadDiaria import *
 from frm_variacao import *
 from frm_capital import *
 from frm_carteira import *
@@ -42,7 +42,7 @@ class frmDesempenhoAtivo(FrameMG):
     def __init__(self):
         self.ativo = Ativo()
         self.frmCapital = None
-        self.frmRendaTotal = None
+        self.frmRendaDiaria = None
         self.frmDespesa = None
         self.frmRadar = None
         self.frmProvento = None
@@ -249,7 +249,7 @@ class frmDesempenhoAtivo(FrameMG):
         self.iconeRenda = wx.Bitmap(self.caminho + 'Rendimento-64.png')
         lbrenda, abrenda = self.iconeRenda.GetSize()
         self.botaoRenda = wx.BitmapButton(self.painel, id=5202, bitmap=self.iconeRenda, pos=(1200, 596), style=wx.NO_BORDER)
-        self.Bind(wx.EVT_BUTTON, self.chama_frmrRendaTotal, self.botaoRenda)
+        self.Bind(wx.EVT_BUTTON, self.chama_frmRendaDiaria, self.botaoRenda)
         self.botaoRenda.SetToolTip("Mapa de Rendimentos")
 
         self.botaoSalva.Hide()
@@ -400,14 +400,14 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             self.frmNegociadoNoDia.Raise()  # Se já existir, apenas traz para frente
 
-    def chama_frmrRendaTotal(self, evento):
+    def chama_frmRendaDiaria(self, evento):
 
-        if self.frmRendaTotal is None:  # Se não existir, cria uma nova janela
-            self.frmRendaTotal = FrmRendaTotal()
-            self.frmRendaTotal.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmRendaTotal"))
-            self.frmRendaTotal.Show()
+        if self.frmRendaDiaria is None:  # Se não existir, cria uma nova janela
+            self.frmRendaDiaria = FrmRendaDiaria()
+            self.frmRendaDiaria.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmRendaDiaria"))
+            self.frmRendaDiaria.Show()
         else:
-            self.frmRendaTotal.Raise()  # Se já existir, apenas traz para frente
+            self.frmRendaDiaria.Raise()  # Se já existir, apenas traz para frente
 
     def chama_frmcarteira(self, evento):
 

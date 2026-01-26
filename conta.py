@@ -1,5 +1,6 @@
 # coding: utf-8
 from databasefunctions import *
+from diversos import *
 
 from bancosbacen import BancosBacen
 
@@ -332,10 +333,48 @@ class Conta:
 
             cursor.execute(clausulaSql, (conta, conta, conta,conta))
             lista = cursor.fetchone()
+
             if lista:
-                return lista[5]
+                saldo =  lista[5]
             else:
-                return None
+                saldo = zero
+            
+            clausulaSql = 'select ' \
+                          '(select sum(valor) from transferencia where contadestino = %s) as entrou, ' \
+                          '(select sum(valor) from transferencia where contaorigem = %s) as saiu;'
+            
+            cursor.execute(clausulaSql, (conta, conta))
+            lista = cursor.fetchone()
+
+            entrou = zero
+            saiu = zero
+            if lista:
+                if lista[0] is not None:    
+                    entrou = lista[0]
+                if lista[1] is not None:    
+                    saiu = lista[1]
+
+            saldo_final = saldo + entrou - saiu
+
+            conexao.close()
+
+            return saldo_final
+
+    @staticmethod
+    def mc_busca_transferencias(conta):
+        try:
+            conexao = ConectaBD.retornaConexao()
+        except Exception as e:
+            print(f"Erro ao conectar com o banco: {e}")
+            return False
+
+        with conexao.cursor() as cursor:
+            clausulaSql = 'SELECT id, datalancamento, contaorigem, contadestino, valor ' \
+                            'FROM transferencia WHERE contaorigem = %s OR contadestino = %s ORDER BY datalancamento;'
+            cursor.execute(clausulaSql, (conta, conta))
+            lista = cursor.fetchall()
+        conexao.close()
+        return lista
     
     @staticmethod
     def mc_get_saldo_bancario_teorico(conta):
@@ -365,11 +404,30 @@ class Conta:
             cursor.execute(clausulaSql, (conta, conta, conta, conta))
             lista = cursor.fetchone()
             if lista:
-                return lista[5]
+                saldo = lista[5]
             else:
-                return None
+                saldo = zero
 
-        self.con.close()
+            clausulaSql = 'select ' \
+                          '(select sum(valor) from transferencia where contadestino = %s) as entrou, ' \
+                          '(select sum(valor) from transferencia where contaorigem = %s) as saiu;'
+
+            cursor.execute(clausulaSql, (conta, conta))
+            lista = cursor.fetchone()
+
+            entrou = zero
+            saiu = zero
+            if lista:
+                if lista[0] is not None:    
+                    entrou = lista[0]
+                if lista[1] is not None:    
+                    saiu = lista[1]
+
+            saldo_final = saldo + entrou - saiu
+
+            conexao.close()
+
+        return saldo_final
 
 
 def main():
