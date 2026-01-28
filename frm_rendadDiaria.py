@@ -25,18 +25,18 @@ class FrmRendaDiaria(wx.Frame):
             "aporte": zero,
             "retirada": zero,
             "transferencia": zero,
-            "rendimento": zero,
+            "renda_bruta": zero,
             "provento": zero,
             "despesa": zero,
             "capital_base": zero,
-            "resultado_dia": zero,
-            "resultado_acumulado": zero,
+            "renda_liquida": zero,
+            "renda_liq_acumulada": zero,
             "renda_pct": 0.0,
-            "renda_acumulada": 0.0,
+            "renda_acumulada_pct": 0.0,
             "saldo_fim": zero,
-            "renda_media": 0.0,
-            "no_ano": 0.0,
-            "no_ano_media": 0.0,
+            "renda_media_pct": 0.0,
+            "no_ano_pct": 0.0,
+            "no_ano_media_pct": 0.0,
         })
   
         self.meses_expandidos = {}   
@@ -90,18 +90,18 @@ class FrmRendaDiaria(wx.Frame):
             "aporte": zero,
             "retirada": zero,
             "transferencia": zero,
-            "rendimento": zero,
+            "renda_bruta": zero,
             "provento": zero,
             "despesa": zero,
             "capital_base": zero,
-            "resultado_dia": zero,
-            "resultado_acumulado": zero,
+            "renda_liquida": zero,
+            "renda_liq_acumulada": zero,
             "renda_pct": 0.0,
-            "renda_acumulada": 0.0,
+            "renda_acumulada_pct": 0.0,
             "saldo_fim": zero,
-            "renda_media": 0.0,
-            "no_ano": 0.0,
-            "no_ano_media": 0.0,
+            "renda_media_pct": 0.0,
+            "no_ano_pct": 0.0,
+            "no_ano_media_pct": 0.0,
         }
 
     def criaComponentes(self, parent, nome_tab):
@@ -114,8 +114,8 @@ class FrmRendaDiaria(wx.Frame):
         grid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.onRightClickGrid)
 
 
-        colunas = ["Ref", "Inicial", "Aporte", "Retirada", "Transferência", "Rendimento", "Provento",
-                   "Despesa", "Renda Mês", "Acumulado", "Saldo", "Renda %", "Acum %", "Média %", "12 meses", "12 média"]
+        colunas = ["Ref", "Inicial", "Aporte", "Retirada", "Transfer", "Rendimento", "Provento",
+                   "Despesa", "Líq Mês", "Acumulado", "Saldo", "Renda %", "Acum %", "Média %", "12 meses", "12 média"]
 
         for i, label in enumerate(colunas):
             grid.SetColLabelValue(i, label)
@@ -286,8 +286,11 @@ class FrmRendaDiaria(wx.Frame):
                 self.consolida_percentual_mensal(nome_tab)
                 self.montaGrid(nome_tab)
 
-        self.consolida_total()
-        self.montaGridTotal()
+        self.construi_total_diario()
+        self.calcula_total_diario()
+        self.consolida_total_mensal()
+        self.montaGrid("Total")
+
 
     def buscaRendaPorAtivo(self, idconta, nome_tab):
         """
@@ -382,7 +385,7 @@ class FrmRendaDiaria(wx.Frame):
                     preco_medio = zero
 
                 if resultado != 0:
-                    self.dados_por_mes[nome_tab][mes]["dias"][dia]["rendimento"] += resultado
+                    self.dados_por_mes[nome_tab][mes]["dias"][dia]["renda_bruta"] += resultado
 
         comprado = saldo_qtde * preco_medio
         return comprado, compras, vendas
@@ -498,32 +501,17 @@ class FrmRendaDiaria(wx.Frame):
             aporte = cons["aporte"]
             retirada = cons["retirada"]
             transferencia = cons["transferencia"]
-            rendimento = cons["rendimento"]
+            rendimento = cons["renda_bruta"]
             provento = cons["provento"]
             despesa = cons["despesa"]
-            rendaMes = cons["resultado_dia"]
-            rendaAcumulada = cons["resultado_acumulado"]
-            rendPercAcm = cons['renda_acumulada']
-            renda_media = cons['renda_media']
-            renda_ano = cons['no_ano']
-            renda_ano_media = cons['no_ano_media']
+            rendaMes = cons["renda_liquida"]
+            rendaAcumulada = cons["renda_liq_acumulada"]
+            rendPercAcm = cons["renda_acumulada_pct"]
+            renda_media = cons["renda_media_pct"]
+            renda_ano = cons["no_ano_pct"]
+            renda_ano_media = cons["no_ano_media_pct"]
             rend_mensal = cons["renda_pct"]
             saldo_fim = cons["saldo_fim"]
-
-            """
-            rendaMes = rendimento + provento - despesa
-            rendaAcumulada += rendaMes
-
-            ultimo_dia = sorted(dados["dias"].keys())[-1]
-            saldo = dados["dias"][ultimo_dia]["saldo_fim"]
-
-            rend_mensal = cons["renda_pct"]
-
-            if linha >= 0:
-                rendPercAcm = (Decimal("1") + rend_mensal) * (Decimal("1") + rendPercAcm) - Decimal("1")
-            else:
-                rendPercAcm = rend_mensal
-            """
 
             linha += 1
             grid.AppendRows(1)
@@ -590,14 +578,14 @@ class FrmRendaDiaria(wx.Frame):
                     grid.SetCellValue(linha, 2, formata_numero(d["aporte"]))
                     grid.SetCellValue(linha, 3, formata_numero(d["retirada"]))
                     grid.SetCellValue(linha, 4, formata_numero(d["transferencia"]))
-                    grid.SetCellValue(linha, 5, formata_numero(d["rendimento"]))
+                    grid.SetCellValue(linha, 5, formata_numero(d["renda_bruta"]))
                     grid.SetCellValue(linha, 6, formata_numero(d["provento"]))
                     grid.SetCellValue(linha, 7, formata_numero(d["despesa"]))
-                    grid.SetCellValue(linha, 8, formata_numero(d["resultado_dia"]))
-                    grid.SetCellValue(linha, 9, formata_numero(d["resultado_acumulado"]))
+                    grid.SetCellValue(linha, 8, formata_numero(d["renda_liquida"]))
+                    grid.SetCellValue(linha, 9, formata_numero(d["renda_liq_acumulada"]))
                     grid.SetCellValue(linha, 10, formata_numero(d["saldo_fim"]))
                     grid.SetCellValue(linha, 11, formata_numero(d["renda_pct"] * 100))
-                    grid.SetCellValue(linha, 12, formata_numero(d["renda_acumulada"] * 100))
+                    grid.SetCellValue(linha, 12, formata_numero(d["renda_acumulada_pct"] * 100))
 
                     grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
                     grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
@@ -618,7 +606,7 @@ class FrmRendaDiaria(wx.Frame):
 
                     if linha % 2 != 0:
                         for i in range(0, 16):
-                            grid.SetCellBackgroundColour(linha, i, wx.Colour(cor_verdinho))
+                            grid.SetCellBackgroundColour(linha, i, wx.Colour(cor_rosinha))
 
                     grid.SetCellTextColour(linha, 0, wx.Colour(90, 90, 90))
 
@@ -640,7 +628,7 @@ class FrmRendaDiaria(wx.Frame):
 
             aporte = cons["aporte"]
             retirada = cons["retirada"]
-            rendimento = cons["rendimento"]
+            rendimento = cons["renda_bruta"]
             provento = cons["provento"]
             despesa = cons["despesa"]
 
@@ -712,7 +700,7 @@ class FrmRendaDiaria(wx.Frame):
                 aporte = d["aporte"]
                 retirada = d["retirada"]
                 transferencia = d["transferencia"]
-                rendimento = d["rendimento"]
+                rendimento = d["renda_bruta"]
                 provento = d["provento"]
                 despesa = d["despesa"]
 
@@ -734,11 +722,11 @@ class FrmRendaDiaria(wx.Frame):
 
                 # grava no modelo
                 d["capital_base"] = capital_base
-                d["resultado_dia"] = resultado_dia
+                d["renda_liquida"] = resultado_dia
                 d["renda_pct"] = renda_pct
                 d["saldo_fim"] = saldo_fim
-                d["resultado_acumulado"] = resultado_acumulado
-                d["renda_acumulada"] = renda_acumulada_pct
+                d["renda_liq_acumulada"] = resultado_acumulado
+                d["renda_acumulada_pct"] = renda_acumulada_pct
 
                 # prepara para o próximo dia
                 saldo_corrente = saldo_fim
@@ -765,18 +753,18 @@ class FrmRendaDiaria(wx.Frame):
             consolidado["aporte"] = zero
             consolidado["retirada"] = zero
             consolidado["transferencia"] = zero
-            consolidado["rendimento"] = zero
+            consolidado["renda_bruta"] = zero
             consolidado["provento"] = zero
             consolidado["despesa"] = zero
             consolidado["capital_base"] = zero
-            consolidado["resultado_dia"] = zero
-            consolidado["resultado_acumulado"] = zero
+            consolidado["renda_liquida"] = zero
+            consolidado["renda_liq_acumulada"] = zero
             consolidado["renda_pct"] = 0.0
-            consolidado["renda_acumulada"] = 0.0
+            consolidado["renda_acumulada_pct"] = 0.0
             consolidado["saldo_fim"] = zero
-            consolidado["renda_media"] = 0.0
-            consolidado["no_ano"] = 0.0
-            consolidado["no_ano_media"] = 0.0
+            consolidado["renda_media_pct"] = 0.0
+            consolidado["no_ano_pct"] = 0.0
+            consolidado["no_ano_media_pct"] = 0.0
 
 
             # soma todos os dias do mês
@@ -787,7 +775,7 @@ class FrmRendaDiaria(wx.Frame):
             aporte = consolidado["aporte"]
             retirada = consolidado["retirada"]
             transferencia = consolidado["transferencia"]
-            rendimento = consolidado["rendimento"]
+            rendimento = consolidado["renda_bruta"]
             provento = consolidado["provento"]
             despesa = consolidado["despesa"]
 
@@ -804,6 +792,7 @@ class FrmRendaDiaria(wx.Frame):
             renda_acm_pct = (1 + renda_mensal_pct) * (1 + renda_acm_pct) - 1
 
             renda_media_pct = (1 + renda_acm_pct) ** (1 / n) - 1
+            
             rendaMediaAno, rendaAno = self.devolve_renda_media_movel(renda_mensal_pct)
 
             consolidado['inicial'] = inicial
@@ -811,7 +800,7 @@ class FrmRendaDiaria(wx.Frame):
             consolidado['renda_acumulada'] = renda_acm_pct
             consolidado['renda_media'] = renda_media_pct
             consolidado['no_ano'] = rendaAno
-            consolidado["no_ano_media"] = rendaMediaAno
+            consolidado["no_ano_media_pct"] = rendaMediaAno
             consolidado['saldo_fim'] = saldo
 
     def consolida_percentual_mensal(self, nome_tab):
@@ -829,7 +818,266 @@ class FrmRendaDiaria(wx.Frame):
 
             dados["consolidado"]["renda_pct"] = fator
 
+    def construi_total_diario(self):
+        """
+        Constrói a estrutura diária da aba Total,
+        somando todas as contas por dia (em reais).
+        """
+
+        zero = Decimal("0.0")
+
+        # garante estrutura da aba Total
+        self.dados_por_mes["Total"] = defaultdict(
+            lambda: {
+                "dias": defaultdict(self.novo_registro),
+                "consolidado": self.novo_registro()
+            }
+        )
+
+        # mapa nome_tab -> cotação
+        cotacoes = {
+            row[1]: Decimal(row[3])
+            for row in self.listaContas
+        }
+
+        for nome_tab, dados_conta in self.dados_por_mes.items():
+
+            if nome_tab == "Total":
+                continue
+
+            cotacao = cotacoes.get(nome_tab, Decimal("1"))
+
+            for mes, dados_mes in dados_conta.items():
+                for dia, reg_dia in dados_mes["dias"].items():
+
+                    reg_total = self.dados_por_mes["Total"][mes]["dias"][dia]
+
+                    reg_total["aporte"]        += reg_dia["aporte"]        * cotacao
+                    reg_total["retirada"]      += reg_dia["retirada"]      * cotacao
+                    reg_total["transferencia"] += reg_dia["transferencia"] * cotacao
+                    reg_total["provento"]      += reg_dia["provento"]      * cotacao
+                    reg_total["despesa"]       += reg_dia["despesa"]       * cotacao
+                    reg_total["renda_bruta"]   += reg_dia["renda_bruta"]   * cotacao
+                    reg_total["renda_liquida"] += reg_dia["renda_liquida"] * cotacao
+
+
+    def calcula_total_diario(self):
+        """
+        Calcula saldo, capital inicial e percentuais
+        para a aba Total, processando apenas os dias.
+        """
+
+        saldo_atual = zero
+        renda_acumulada_pct = 0.0  # float
+        
+
+        for mes in sorted(self.dados_por_mes["Total"].keys()):
+            dias = self.dados_por_mes["Total"][mes]["dias"]
+
+            renda_acumulada_pct = 0.0
+            renda_acumulada = zero
+            for dia in sorted(dias.keys()):
+                reg = dias[dia]
+
+                reg["inicial"] = saldo_atual
+
+                saldo_atual = (
+                    saldo_atual
+                    + reg["aporte"]
+                    - reg["retirada"]
+                    + reg["transferencia"]
+                    - reg["despesa"]
+                    + reg["renda_bruta"]
+                    + reg["provento"]
+                )
+
+                reg["saldo_fim"] = saldo_atual
+
+                if saldo_atual > 0:
+                    renda_pct = float(reg["renda_liquida"] / saldo_atual)
+                else:
+                    renda_pct = 0.0
+
+                renda_acumulada_pct = (1 + renda_acumulada_pct) * (1 + renda_pct) - 1
+                renda_acumulada += reg["renda_liquida"]
+                reg["renda_liq_acumulada"] = renda_acumulada
+                reg["renda_pct"] = renda_pct
+                reg["renda_acumulada_pct"] = renda_acumulada_pct
+
+    def consolida_total_mensal(self):
+        """
+        Consolida os dados diários da aba Total
+        em valores mensais.
+        """
+
+        resultado_acumulado = zero
+        renda_acumulada = 0.0
+        n = 0
+
+        for mes in sorted(self.dados_por_mes["Total"].keys()):
+            n += 1
+            dados_mes = self.dados_por_mes["Total"][mes]
+            dias = dados_mes["dias"]
+            cons = dados_mes["consolidado"]
+
+            if not dias:
+                continue
+
+            dias_ord = sorted(dias.keys())
+            primeiro = dias[dias_ord[0]]
+            ultimo = dias[dias_ord[-1]]
+
+            # acumulados monetários
+            for campo in (
+                "aporte", "retirada", "transferencia",
+                "renda_bruta", "provento", "despesa", "renda_liquida"
+            ):
+                cons[campo] = sum(d[campo] for d in dias.values())
+
+            # capital e saldo
+            ultimo_resultado_dia = ultimo["renda_liq_acumulada"]
+            
+            resultado_acumulado += ultimo_resultado_dia
+            cons["inicial"] = primeiro["inicial"]
+            cons["saldo_fim"]   = ultimo["saldo_fim"]
+            #cons["renda_liquida"] = ultimo_resultado_dia
+            cons["renda_liq_acumulada"] = resultado_acumulado
+
+            # percentuais
+            renda = ultimo["renda_acumulada_pct"]
+            renda_acumulada = (1+ renda_acumulada) * (1 + renda) -1
+            cons["renda_pct"] = renda
+            cons["renda_acumulada_pct"] = renda_acumulada
+
+            renda_media_pct = (1 + renda) ** (1 / n) - 1
+            cons["renda_media_pct"] = renda_media_pct
+
+            rendaMediaAno, rendaAno = self.devolve_renda_media_movel(renda)
+            cons["no_ano_pct"] = rendaAno
+            cons["no_ano_media_pct"] = rendaMediaAno
+
+
     def consolida_total(self):
+        """
+        Consolida todas as contas na aba Total,
+        convertendo valores para reais conforme cotação.
+        """
+
+        # cria mapa nome_conta -> cotacao
+        cotacoes = {
+            row[1]: Decimal(row[3])
+            for row in self.listaContas
+        }
+
+        for nome_tab, dados_conta in sorted(self.dados_por_mes.items()):
+
+            # ignora a própria aba Total, se existir
+            if nome_tab == "Total":
+                continue
+
+            cotacao = cotacoes.get(nome_tab, Decimal("1"))
+
+
+            for mes, dados in dados_conta.items():
+                cons = dados["consolidado"]
+
+                self.dados_total[mes]["aporte"] += cons["aporte"] * cotacao
+                self.dados_total[mes]["retirada"] += cons["retirada"] * cotacao
+
+
+
+        for mes in sorted(self.dados_por_mes[nome_tab].keys()):
+            dias = self.dados_por_mes[nome_tab][mes]["dias"]
+            resultado_acumulado = zero
+            renda_acumulada_pct = 0.0
+            renda_pct = 0.0
+            for dia in sorted(dias.keys()):
+                d = dias[dia]
+                d["inicial"] = saldo_corrente
+                aporte = d["aporte"]
+                retirada = d["retirada"]
+                transferencia = d["transferencia"]
+                rendimento = d["renda_bruta"]
+                provento = d["provento"]
+                despesa = d["despesa"]
+
+                # capital disponível no início do dia
+                capital_base = saldo_corrente + aporte - retirada + transferencia
+
+                # resultado financeiro do dia
+                resultado_dia = rendimento + provento - despesa
+                resultado_acumulado += resultado_dia
+
+                # rendimento percentual diário
+                if capital_base != 0:
+                    renda_pct = float(resultado_dia) / float(capital_base)
+                else:
+                    renda_pct = 0.0
+                renda_acumulada_pct = (1 + renda_acumulada_pct) * (1 + renda_pct) - 1
+                # saldo final do dia
+                saldo_fim = capital_base + resultado_dia
+
+                # grava no modelo
+                d["capital_base"] = capital_base
+                d["renda_liquida"] = resultado_dia
+                d["renda_pct"] = renda_pct
+                d["saldo_fim"] = saldo_fim
+                d["renda_liq_acumulada"] = resultado_acumulado
+                d["renda_acumulada_pct"] = renda_acumulada_pct
+
+                # prepara para o próximo dia
+                saldo_corrente = saldo_fim
+
+
+
+
+
+
+
+            dias = self.dados_por_mes[nome_tab][mes]["dias"]
+            resultado_acumulado = zero
+            renda_acumulada_pct = 0.0
+            renda_pct = 0.0
+            for dia in sorted(dias.keys()):
+                d = dias[dia]
+                d["inicial"] = saldo_corrente
+                aporte = d["aporte"]
+                retirada = d["retirada"]
+                transferencia = d["transferencia"]
+                rendimento = d["renda_bruta"]
+                provento = d["provento"]
+                despesa = d["despesa"]
+
+                # capital disponível no início do dia
+                capital_base = saldo_corrente + aporte - retirada + transferencia
+
+                # resultado financeiro do dia
+                resultado_dia = rendimento + provento - despesa
+                resultado_acumulado += resultado_dia
+
+                # rendimento percentual diário
+                if capital_base != 0:
+                    renda_pct = float(resultado_dia) / float(capital_base)
+                else:
+                    renda_pct = 0.0
+                renda_acumulada_pct = (1 + renda_acumulada_pct) * (1 + renda_pct) - 1
+                # saldo final do dia
+                saldo_fim = capital_base + resultado_dia
+
+                # grava no modelo
+                d["capital_base"] = capital_base
+                d["renda_liquida"] = resultado_dia
+                d["renda_pct"] = renda_pct
+                d["saldo_fim"] = saldo_fim
+                d["renda_liq_acumulada"] = resultado_acumulado
+                d["renda_acumulada_pct"] = renda_acumulada_pct
+
+                # prepara para o próximo dia
+                saldo_corrente = saldo_fim
+
+
+
+    def consolida_total_old(self):
         """
         Consolida todas as contas na aba Total,
         convertendo valores para reais conforme cotação.
@@ -856,10 +1104,9 @@ class FrmRendaDiaria(wx.Frame):
 
                 self.dados_total[mes]["aporte"] += cons["aporte"] * cotacao
                 self.dados_total[mes]["retirada"] += cons["retirada"] * cotacao
-                self.dados_total[mes]["rendimento"] += cons["rendimento"] * cotacao
+                self.dados_total[mes]["renda_bruta"] += cons["renda_bruta"] * cotacao
                 self.dados_total[mes]["provento"] += cons["provento"] * cotacao
                 self.dados_total[mes]["despesa"] += cons["despesa"] * cotacao
-
 
     def ponteiroGrid(self, nome_tab):
         if nome_tab in self.tabs_data and "grid" in self.tabs_data[nome_tab]:
