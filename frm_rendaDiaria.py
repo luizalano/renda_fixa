@@ -18,8 +18,12 @@ class FrmRendaDiaria(wx.Frame):
                          style=wx.DEFAULT_FRAME_STYLE & ~wx.RESIZE_BORDER & ~wx.MAXIMIZE_BOX)
         self.SetPosition((1, 1))  # Define a posição inicial da janela
 
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.main_sizer)
+
         self.tabs_data = {}  # Dicionário para armazenar referências dos componentes por aba
         self.dados_por_mes = {}   
+        self.resumo_por_tab = {}
         self.dados_total = defaultdict(lambda: {
             "inicial": zero,
             "aporte": zero,
@@ -68,6 +72,9 @@ class FrmRendaDiaria(wx.Frame):
 
         # Criar Notebook para abas
         self.notebook = wx.Notebook(self)
+        self.main_sizer.Add(self.notebook, 1, wx.EXPAND)
+
+        self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, lambda e: (self.atualiza_rodape(), e.Skip()))
 
         # Criar a aba "Total" e componentes base
         self.tab_total = wx.Panel(self.notebook)
@@ -76,6 +83,8 @@ class FrmRendaDiaria(wx.Frame):
 
         self.meses_expandidos = {}
 
+        self.footer_ctrls = {}
+        self.criaRodapeGlobal()
 
         # Criar abas dinâmicas para cada conta
         self.create_dynamic_tabs()
@@ -104,6 +113,19 @@ class FrmRendaDiaria(wx.Frame):
             "no_ano_media_pct": 0.0,
         }
 
+    def novo_registro_por_tab(self):
+        return {
+            "aporte": zero,
+            "retirada": zero,
+            "provento": zero,
+            "despesa": zero,
+            "bruto": zero,
+            "renda": zero,
+            "disponivel": zero,
+            "comprado": zero,
+            "patrimonio": zero,
+        }
+
     def criaComponentes(self, parent, nome_tab):
         """Cria os componentes da aba e adiciona labels acima das caixas de texto"""
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -122,38 +144,29 @@ class FrmRendaDiaria(wx.Frame):
 
         sizer.Add(grid, 0, wx.ALL, 11)
 
-        self.tabs_data[nome_tab] = {}  # Garante que a aba existe no dicionário
-        self.tabs_data[nome_tab]["grid"] = grid  # Salva a referência da grid
+        self.tabs_data[nome_tab] = {"grid": grid}
 
-        # Lista com os nomes dos campos
-        labels = ["Aporte", "Retirada", "Provento", "Renda", "Despesa",
-                  "Resultado", "Disponivel", "Comprado", "Patrimonio"]
-
-        # Criar um sizer horizontal para alinhar os labels e textctrls
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        #self.tabs_data[nome_tab] = {}  # Dicionário para armazenar referências dos componentes desta aba
-
-        for label in labels:
-            v_sizer = wx.BoxSizer(wx.VERTICAL)  # Sizer para alinhar label e campo
-
-            # Criar Label
-            lbl = wx.StaticText(parent, label=label, size=(120, 20), style=wx.TE_RIGHT)  # Altura fixa para os labels
-            v_sizer.Add(lbl, 0, wx.ALIGN_CENTER | wx.BOTTOM, 2)
-
-            # Criar Campo de Entrada
-            #txt = wx.TextCtrl(parent, style=wx.TE_RIGHT, size=(120, -1))
-            txt = wx.TextCtrl(parent, style=wx.TE_RIGHT, size=(120, 25))  # Altura fixa para os campos
-            v_sizer.Add(txt, 0, wx.EXPAND)
-
-            self.tabs_data[nome_tab][f"txt{label}"] = txt  # Armazena o campo no dicionário
-
-            h_sizer.Add(v_sizer, 0, wx.ALL, 5)
-
-        sizer.Add(h_sizer, 0, wx.ALL | wx.EXPAND, 10)
         parent.SetSizer(sizer)
 
-        #return grid
+    def criaRodapeGlobal(self):
+        labels = ["Aporte", "Retirada", "Provento", "Despesa", "Bruto", "Renda", "Disponivel", "Comprado", "Patrimonio"]
+
+        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        for label in labels:
+            v = wx.BoxSizer(wx.VERTICAL)
+
+            lbl = wx.StaticText(self, label=label, size=(120, 20), style=wx.ALIGN_RIGHT)
+            txt = wx.TextCtrl(self, size=(120, 25), style=wx.TE_RIGHT)
+
+            v.Add(lbl, 0, wx.ALIGN_CENTER | wx.BOTTOM, 2)
+            v.Add(txt, 0, wx.EXPAND)
+
+            self.footer_ctrls[label.lower()] = txt
+            h_sizer.Add(v, 0, wx.ALL, 5)
+
+        # Deu erro na linha abaixo
+        self.main_sizer.Add(h_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
     def onRightClickGrid(self, event):
         grid = event.GetEventObject()
@@ -260,6 +273,9 @@ class FrmRendaDiaria(wx.Frame):
         #})
 
         self.dados_por_mes.clear()
+        self.resumo_por_tab.clear()
+        # Aqui eu crio a estrutura para a aba "Total"
+        self.resumo_por_tab["Total"] = self.novo_registro_por_tab()
 
         for row in self.listaContas:
             id_conta = row[0]
@@ -269,6 +285,8 @@ class FrmRendaDiaria(wx.Frame):
                 "dias": defaultdict(self.novo_registro),
                 "consolidado": self.novo_registro()
             })
+            # Aqui eu crio a estrutura para cada uma das demais abas.
+            self.resumo_por_tab[nome_tab] = self.novo_registro_por_tab()
 
             self.listaAtivos = AtivoNegociado.mc_devolve_id_ativo_negociado_por_conta(idconta=row[0])
             if len(self.listaAtivos) == 0:
@@ -281,16 +299,21 @@ class FrmRendaDiaria(wx.Frame):
                 self.buscaDespesas(row[0], nome_tab)
                 self.buscaCapital(row[0], nome_tab)
                 self.buscaTransferencias(row[0], nome_tab)
+                self.buscasaldobancario(row[0], nome_tab)
                 self.calcula_rendimento_diario(nome_tab)
                 self.consolida_por_mes(nome_tab)
                 self.consolida_percentual_mensal(nome_tab)
                 self.montaGrid(nome_tab)
 
-        self.construi_total_diario()
+        self.constroi_total_diario()
         self.calcula_total_diario()
         self.consolida_total_mensal()
         self.montaGrid("Total")
+        self.atualiza_rodape()
 
+    def buscasaldobancario(self, idconta, nome_tab):
+        saldo = Conta.mc_get_saldo_bancario(idconta)
+        self.resumo_por_tab[nome_tab]["disponivel"] = saldo
 
     def buscaRendaPorAtivo(self, idconta, nome_tab):
         """
@@ -345,6 +368,8 @@ class FrmRendaDiaria(wx.Frame):
             self.totalCompradoReal += comprado * self.cotacaoAtual
             self.totalComprasReal += compras * self.cotacaoAtual
             self.totalVendasReal += vendas * self.cotacaoAtual
+        
+        self.resumo_por_tab[nome_tab]["comprado"] = self.totalComprado
 
     def _processa_lancamentos_ativo(self, lancamentos, nome_tab):
         saldo_qtde = 0
@@ -391,14 +416,18 @@ class FrmRendaDiaria(wx.Frame):
         return comprado, compras, vendas
 
     def _processa_proventos_ativo(self, proventos, nome_tab):
+        total_proventos = zero
         for row in proventos:
             data = row[1]
             valor = row[2]
+            total_proventos += valor
 
             dia = data.strftime("%Y/%m/%d")
             mes = data.strftime("%Y/%m")
 
             self.dados_por_mes[nome_tab][mes]["dias"][dia]["provento"] += valor
+
+        self.resumo_por_tab[nome_tab]["provento"] += total_proventos
 
     def getCotacaoTab(self, nomeTab):
         """
@@ -412,20 +441,26 @@ class FrmRendaDiaria(wx.Frame):
     def buscaDespesas(self, idconta, nome_tab):
         
         lista = Despesa.mc_busca_despesas_por_conta(idconta)
+        total_despesa = zero
         for row in lista:
             data = row[0]
             valor = row[1]
+            total_despesa += valor
 
             dia = data.strftime("%Y/%m/%d")
             mes = data.strftime("%Y/%m")
 
             self.dados_por_mes[nome_tab][mes]["dias"][dia]["despesa"] += valor
 
+        self.resumo_por_tab[nome_tab]["despesa"] = total_despesa
+
     def buscaCapital(self, idconta, nome_tab):
         
         #Processa aportes e retiradas da conta.
         #Registra valores POR DIA dentro de self.dados_por_mes.
         
+        total_aporte = zero
+        total_retirada = zero
 
         lista = Capital.mc_busca_capital_por_conta(idconta)
 
@@ -437,10 +472,15 @@ class FrmRendaDiaria(wx.Frame):
             mes = data.strftime("%Y/%m")
 
             if valor >= 0:
+                total_aporte += valor
                 self.dados_por_mes[nome_tab][mes]["dias"][dia]["aporte"] += valor
             else:
                 # retirada sempre positiva no modelo
+                total_retirada += valor * -1
                 self.dados_por_mes[nome_tab][mes]["dias"][dia]["retirada"] += valor * -1
+        
+        self.resumo_por_tab[nome_tab]["aporte"] = total_aporte
+        self.resumo_por_tab[nome_tab]["retirada"] = total_retirada
 
     def buscaTransferencias(self, idconta, nome_tab):
         
@@ -492,7 +532,7 @@ class FrmRendaDiaria(wx.Frame):
         rendPercAcm = zero
 
         saldo = zero
-
+        
         for mes in sorted(self.dados_por_mes[nometab].keys()):
             dados = self.dados_por_mes[nometab][mes]
             cons = dados["consolidado"]
@@ -743,6 +783,7 @@ class FrmRendaDiaria(wx.Frame):
         rend_mensal_pct = 0.0
         renda_acm_pct = 0.0
         rendaAcumulada = zero
+        brutoAcumulado = zero
         
         for mes, dados in sorted(self.dados_por_mes[nome_tab].items()):
             n += 1            
@@ -780,6 +821,7 @@ class FrmRendaDiaria(wx.Frame):
             despesa = consolidado["despesa"]
 
             rendaMes = rendimento + provento - despesa
+            brutoAcumulado += rendimento
             rendaAcumulada += rendaMes
 
             ultimo_dia = sorted(dados["dias"].keys())[-1]
@@ -795,13 +837,16 @@ class FrmRendaDiaria(wx.Frame):
             
             rendaMediaAno, rendaAno = self.devolve_renda_media_movel(renda_mensal_pct)
 
-            consolidado['inicial'] = inicial
-            consolidado['resultado_acumulado'] = rendaAcumulada
-            consolidado['renda_acumulada'] = renda_acm_pct
-            consolidado['renda_media'] = renda_media_pct
-            consolidado['no_ano'] = rendaAno
+            consolidado["inicial"] = inicial
+            consolidado["renda_liq_acumulada"] = rendaAcumulada
+            consolidado["renda_acumulada_pct"] = renda_acm_pct
+            consolidado["renda_media_pct"] = renda_media_pct
+            consolidado["no_ano_pct"] = rendaAno
             consolidado["no_ano_media_pct"] = rendaMediaAno
-            consolidado['saldo_fim'] = saldo
+            consolidado["saldo_fim"] = saldo
+
+        self.resumo_por_tab[nome_tab]["renda"] = rendaAcumulada
+        self.resumo_por_tab[nome_tab]["bruto"] = brutoAcumulado
 
     def consolida_percentual_mensal(self, nome_tab):
         """
@@ -818,7 +863,7 @@ class FrmRendaDiaria(wx.Frame):
 
             dados["consolidado"]["renda_pct"] = fator
 
-    def construi_total_diario(self):
+    def constroi_total_diario(self):
         """
         Constrói a estrutura diária da aba Total,
         somando todas as contas por dia (em reais).
@@ -844,8 +889,30 @@ class FrmRendaDiaria(wx.Frame):
 
             if nome_tab == "Total":
                 continue
-
+            
             cotacao = cotacoes.get(nome_tab, Decimal("1"))
+
+            aporte = self.resumo_por_tab[nome_tab]["aporte"] * cotacao
+            retirada = self.resumo_por_tab[nome_tab]["retirada"] * cotacao
+            provento = self.resumo_por_tab[nome_tab]["provento"] * cotacao
+            despesa = self.resumo_por_tab[nome_tab]["despesa"] * cotacao
+            bruto = self.resumo_por_tab[nome_tab]["bruto"] * cotacao
+            renda_liquida = self.resumo_por_tab[nome_tab]["renda"] * cotacao
+            disponivel = self.resumo_por_tab[nome_tab]["disponivel"] * cotacao
+            comprado = self.resumo_por_tab[nome_tab]["comprado"] * cotacao  
+            patrimonio = disponivel + comprado
+
+            self.resumo_por_tab["Total"]["aporte"] += aporte
+            self.resumo_por_tab["Total"]["retirada"] += retirada
+            self.resumo_por_tab["Total"]["provento"] += provento
+            self.resumo_por_tab["Total"]["despesa"] += despesa
+            self.resumo_por_tab["Total"]["bruto"] += bruto
+            self.resumo_por_tab["Total"]["renda"] += renda_liquida
+            self.resumo_por_tab["Total"]["disponivel"] += disponivel
+            self.resumo_por_tab["Total"]["comprado"] += comprado
+            self.resumo_por_tab["Total"]["patrimonio"] += patrimonio
+
+            self.resumo_por_tab[nome_tab]["patrimonio"] = patrimonio
 
             for mes, dados_mes in dados_conta.items():
                 for dia, reg_dia in dados_mes["dias"].items():
@@ -859,7 +926,6 @@ class FrmRendaDiaria(wx.Frame):
                     reg_total["despesa"]       += reg_dia["despesa"]       * cotacao
                     reg_total["renda_bruta"]   += reg_dia["renda_bruta"]   * cotacao
                     reg_total["renda_liquida"] += reg_dia["renda_liquida"] * cotacao
-
 
     def calcula_total_diario(self):
         """
@@ -956,7 +1022,6 @@ class FrmRendaDiaria(wx.Frame):
             cons["no_ano_pct"] = rendaAno
             cons["no_ano_media_pct"] = rendaMediaAno
 
-
     def consolida_total(self):
         """
         Consolida todas as contas na aba Total,
@@ -1029,11 +1094,6 @@ class FrmRendaDiaria(wx.Frame):
                 saldo_corrente = saldo_fim
 
 
-
-
-
-
-
             dias = self.dados_por_mes[nome_tab][mes]["dias"]
             resultado_acumulado = zero
             renda_acumulada_pct = 0.0
@@ -1074,8 +1134,6 @@ class FrmRendaDiaria(wx.Frame):
 
                 # prepara para o próximo dia
                 saldo_corrente = saldo_fim
-
-
 
     def consolida_total_old(self):
         """
@@ -1123,6 +1181,13 @@ class FrmRendaDiaria(wx.Frame):
                 grids_ativos.append(componentes["grid"])
 
         return grids_ativos
+
+    def atualiza_rodape(self):
+        nome_tab = self.notebook.GetPageText(self.notebook.GetSelection())
+        dados = self.resumo_por_tab[nome_tab]
+
+        for campo, ctrl in self.footer_ctrls.items():
+            ctrl.SetValue(formata_numero(dados[campo.lower()]))
 
 def main():
 

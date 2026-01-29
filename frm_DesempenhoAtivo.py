@@ -1,7 +1,7 @@
 # coding: utf-8
 from frm_notaNegociacao import FrmNotaNegociacao
 from frm_radar import *
-from frm_rendadDiaria import *
+from frm_rendaDiaria import *
 from frm_variacao import *
 from frm_capital import *
 from frm_carteira import *
@@ -256,6 +256,7 @@ class frmDesempenhoAtivo(FrameMG):
         self.botaoDelete.Hide()
         self.botaoNovo.Hide()
         self.botaoCancela.Hide()
+        self.botaoSaida.Hide()
 
         self.limpaElementos()
 
