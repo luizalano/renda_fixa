@@ -3,7 +3,9 @@ import wx
 import os
 import shutil
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
+import re
+from pathlib import Path
 
 from databasefunctions import ConectaBD
 
@@ -72,12 +74,33 @@ class LeHistoricoB3(wx.Frame):
         except Exception as e:
             print(f"Erro ao conectar com o banco: {e}")
             return False
+        
+    def extrai_data_do_nome(self, caminho):
+        nome_arquivo = Path(caminho).stem  # remove caminho e extensão
+        data_str = nome_arquivo[-10:]      # últimos 10 caracteres
+        try:
+            return datetime.strptime(data_str, "%d-%m-%Y").date()
+        except Exception as e:
+            print(f"Erro ao extrair data do nome do arquivo: {data_str}")
+            return None
 
+    def extrai_data_do_nome_regex(caminho: str) -> date:
+        match = re.search(r"\d{2}-\d{2}-\d{4}", caminho)
+        if not match:
+            raise ValueError("Data não encontrada no nome do arquivo")
+        return datetime.strptime(match.group(), "%d-%m-%Y").date()        
+    
     def importar_arquivo(self, caminho, contador):
         try:
-            df = pd.read_csv(caminho, skiprows=[0], sep=';', dtype=str)
+            df = pd.read_csv(caminho, skiprows=[0, 1], sep=';', dtype=str)
+            #df = pd.read_csv(caminho, skiprows=2, sep=';', dtype=str) os dois comandos são semelhantes
             total = len(df)
-            df = df[df['SgmtNm'].str.upper() == 'CASH']
+            df = df[df['Segmento'].str.upper() == 'CASH']
+
+            data_cotacao = self.extrai_data_do_nome(caminho)
+            if data_cotacao is None:
+                wx.MessageBox(f"Não foi possível extrair a data do arquivo: {caminho}", "Erro", wx.OK | wx.ICON_ERROR)
+                return
 
             ativos_interesse = self.buscar_ativos_de_interesse()
             mapa_ativos = {sigla: idativo for idativo, sigla in ativos_interesse}
@@ -89,7 +112,7 @@ class LeHistoricoB3(wx.Frame):
 
             for idx, row in df.iterrows():
                 #print("Lendo linha " + str(idx))
-                sigla = row['TckrSymb'].strip()
+                sigla = row['Instrumento financeiro'].strip()
                 if sigla not in mapa_ativos:
                     continue
                 self.gauge.SetValue(idx + 1)
@@ -102,13 +125,13 @@ class LeHistoricoB3(wx.Frame):
                 
                 try:
                     id_ativo = mapa_ativos[sigla]
-                    data_cotacao = self.devolve_data(row['RptDt'].strip())
-                    preco = self.parse_float(row['LastPric'])
-                    minimo = self.parse_float(row['MinPric'])
-                    maximo = self.parse_float(row['MaxPric'])
-                    qtd_negocios = self.parse_int(row['TradQty'])
-                    qtd_acoes = self.parse_int(row['FinInstrmQty'])
-                    valor_negociado = self.parse_float(row['NtlFinVol'])
+                    #data_cotacao = self.devolve_data(row['RptDt'].strip())
+                    preco = self.parse_float(row['Preço de fechamento'])
+                    minimo = self.parse_float(row['Preço mínimo'])
+                    maximo = self.parse_float(row['Preço máximo'])
+                    qtd_negocios = self.parse_int(row['Quantidade de negócios'])
+                    qtd_acoes = self.parse_int(row['Quantidade de contratos'])
+                    valor_negociado = self.parse_float(row['Volume financeiro'])
 
                     sql = '''
                         INSERT INTO cotacaoativo 
