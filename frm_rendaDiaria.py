@@ -186,12 +186,17 @@ class FrmRendaDiaria(wx.Frame):
 
         if nome_tab is None:
             return
+        # Este trecho não estava aqui, mas sem ele dava erro logo abaixo, pois não encontrava nada em self.meses_expandidos[nome_tab] na primeira vez que rodava.
+        if nome_tab not in self.meses_expandidos:
+            self.meses_expandidos[nome_tab] = set()
 
         # só reage a linhas de mês
         if "/" in valor and len(valor) == 7:  # "YYYY/MM"
             menu = wx.Menu()
-
-            if valor in self.meses_expandidos:
+            # Essa linha estava assim:
+            # if valor in self.meses_expandidos:
+            # Mas nunca aparecia o menu "Recolher dias, então coloquei como está agora"
+            if valor in self.meses_expandidos[nome_tab]:
                 item = menu.Append(wx.ID_ANY, "Recolher dias")
             else:
                 item = menu.Append(wx.ID_ANY, "Expandir dias")
@@ -578,6 +583,15 @@ class FrmRendaDiaria(wx.Frame):
             grid.SetCellValue(linha, 14, formata_numero(renda_ano * 100))
             grid.SetCellValue(linha, 15, formata_numero(renda_ano_media * 100))
 
+            if rendimento      < 0: grid.SetCellTextColour(linha,  5, wx.RED)
+            if rendaMes        < 0: grid.SetCellTextColour(linha,  8, wx.RED)
+            if rendaAcumulada  < 0: grid.SetCellTextColour(linha,  9, wx.RED)
+            if rend_mensal     < 0: grid.SetCellTextColour(linha, 11, wx.RED)
+            if rendPercAcm     < 0: grid.SetCellTextColour(linha, 12, wx.RED)
+            if renda_media     < 0: grid.SetCellTextColour(linha, 13, wx.RED)
+            if renda_ano       < 0: grid.SetCellTextColour(linha, 14, wx.RED)
+            if renda_ano_media < 0: grid.SetCellTextColour(linha, 15, wx.RED)
+
             grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
             grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
             grid.SetCellAlignment(linha,  2, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
@@ -627,6 +641,12 @@ class FrmRendaDiaria(wx.Frame):
                     grid.SetCellValue(linha, 11, formata_numero(d["renda_pct"] * 100))
                     grid.SetCellValue(linha, 12, formata_numero(d["renda_acumulada_pct"] * 100))
 
+                    if d["renda_bruta"]          < 0: grid.SetCellTextColour(linha,  5, wx.RED)
+                    if d["renda_liquida"]        < 0: grid.SetCellTextColour(linha,  8, wx.RED)
+                    if d["renda_liq_acumulada"]  < 0: grid.SetCellTextColour(linha,  9, wx.RED)
+                    if d["renda_pct"]            < 0: grid.SetCellTextColour(linha, 11, wx.RED)
+                    if d["renda_acumulada_pct"]  < 0: grid.SetCellTextColour(linha, 12, wx.RED)
+
                     grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
                     grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
                     grid.SetCellAlignment(linha,  2, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
@@ -649,74 +669,6 @@ class FrmRendaDiaria(wx.Frame):
                             grid.SetCellBackgroundColour(linha, i, wx.Colour(cor_rosinha))
 
                     grid.SetCellTextColour(linha, 0, wx.Colour(90, 90, 90))
-
-    def montaGridTotal(self):
-        grid = self.ponteiroGrid('Total')
-
-        grid.ClearGrid()
-        if grid.GetNumberRows() > 0:
-            grid.DeleteRows(0, grid.GetNumberRows())
-
-        linha = -1
-        rendaAcumulada = zero
-        rendPercAcm = 0.0
-
-        saldo = zero
-
-        for mes in sorted(self.dados_total.keys()):
-            cons = self.dados_total[mes]
-
-            aporte = cons["aporte"]
-            retirada = cons["retirada"]
-            rendimento = cons["renda_bruta"]
-            provento = cons["provento"]
-            despesa = cons["despesa"]
-
-            rendaMes = rendimento + provento - despesa
-            rendaAcumulada += rendaMes
-
-            rend_mensal = cons["renda_pct"]
-
-            if linha >= 0:
-                rendPercAcm = (1 + rend_mensal) * (1 + rendPercAcm) - 1
-            else:
-                rendPercAcm = rend_mensal
-
-            linha += 1
-            grid.AppendRows(1)
-
-            grid.SetCellValue(linha, 0, f"{mes}")
-            grid.SetCellValue(linha, 1, formata_numero(saldo - rendaMes))   # Errado
-            grid.SetCellValue(linha, 2, formata_numero(aporte))
-            grid.SetCellValue(linha, 3, formata_numero(retirada))
-            grid.SetCellValue(linha, 4, formata_numero(rendimento))
-            grid.SetCellValue(linha, 5, formata_numero(provento))
-            grid.SetCellValue(linha, 6, formata_numero(despesa))
-            grid.SetCellValue(linha, 7, formata_numero(rendaMes))
-            grid.SetCellValue(linha, 8, formata_numero(rendaAcumulada))
-            grid.SetCellValue(linha, 9, formata_numero(saldo))
-            grid.SetCellValue(linha,10, formata_numero(rend_mensal * 100))
-            grid.SetCellValue(linha,11, formata_numero(rendPercAcm * 100))
-
-            grid.SetCellAlignment(linha,  0, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid.SetCellAlignment(linha,  1, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid.SetCellAlignment(linha,  2, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid.SetCellAlignment(linha,  3, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid.SetCellAlignment(linha,  4, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid.SetCellAlignment(linha,  5, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid.SetCellAlignment(linha,  6, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid.SetCellAlignment(linha,  7, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid.SetCellAlignment(linha,  8, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid.SetCellAlignment(linha,  9, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            grid.SetCellAlignment(linha, 10, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid.SetCellAlignment(linha, 11, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid.SetCellAlignment(linha, 12, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid.SetCellAlignment(linha, 13, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            grid.SetCellAlignment(linha, 14, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-
-            if linha % 2 != 0:
-                for i in range(0, 15):
-                    grid.SetCellBackgroundColour(linha, i, wx.Colour(cor_azulzinho))
 
     def calcula_rendimento_diario(self, nome_tab):
         

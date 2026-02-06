@@ -16,21 +16,23 @@ class AwesomeCotacao:
         
     def _busca_moeda(self, url, idmoeda):
         """Busca cotação na API e grava no banco"""
-        response = requests.get(url)
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                dados = response.json()
+                if dados:
+                    ultima_cotacao = dados[0]  # Última cotação disponível
+                    data_cotacao = ultima_cotacao["create_date"][:10]  # Formato 'YYYY-MM-DD'
+                
+                    valor_cotacao = float(ultima_cotacao["bid"])  # Preço de venda
 
-        if response.status_code == 200:
-            dados = response.json()
-            if dados:
-                ultima_cotacao = dados[0]  # Última cotação disponível
-                data_cotacao = ultima_cotacao["create_date"][:10]  # Formato 'YYYY-MM-DD'
-               
-                valor_cotacao = float(ultima_cotacao["bid"])  # Preço de venda
-
-                self.grava_cotacao(idmoeda, data_cotacao, valor_cotacao)
+                    self.grava_cotacao(idmoeda, data_cotacao, valor_cotacao)
+                else:
+                    print("Nenhuma cotação encontrada.")
             else:
-                print("Nenhuma cotação encontrada.")
-        else:
-            print(f"Erro ao acessar API: {response.status_code}")
+                print(f"Erro ao acessar API: {response.status_code}")
+        except Exception as e:
+            print(f"Erro ao processar dados da API: {e}")
 
     def grava_cotacao(self, idmoeda, data_cot, valor_cotacao):
         """Insere ou atualiza a cotação no banco"""
