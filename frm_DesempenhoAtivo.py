@@ -6,6 +6,7 @@ from frm_variacao import *
 from frm_capital import *
 from frm_carteira import *
 from frm_rendaFixa import *
+from frm_transferencia import *
 from cotacao import *
 from ativo import Ativo
 from diversos import *
@@ -52,6 +53,7 @@ class frmDesempenhoAtivo(FrameMG):
         self.leRadarB3 = None
         self.frmRendaFixa = None
         self.frmNotaNegociacao = None
+        self.frmTransferencia = None
 
         self.idBolsa = None
         self.idConta = None
@@ -240,11 +242,17 @@ class frmDesempenhoAtivo(FrameMG):
 
         self.iconeVariacao = wx.Bitmap(self.caminho + 'stock-exchange-32.png')
         lbvariacao, abvariacao = self.iconeVariacao.GetSize()
-        #self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(novoxi + lbnota + plusx, novoyi + abnota + plusy), style=wx.NO_BORDER)
         self.botaoVariacao = wx.BitmapButton(self.painel, id=9902, bitmap=self.iconeVariacao, pos=(novoxi + lbnota + plusx, novoyi), style=wx.NO_BORDER)
         novoxi = novoxi + lbnota + plusx
         self.Bind(wx.EVT_BUTTON, self.chama_frmvariacao, self.botaoVariacao)
         self.botaoVariacao.SetToolTip("Grafico da variação diária de ativos")
+
+        self.iconeTrasnferencia = wx.Bitmap(self.caminho + 'transfer-32.png')
+        lbtransfer, abtransfer = self.iconeTrasnferencia.GetSize()
+        self.botaoTransferencia = wx.BitmapButton(self.painel, id=9903, bitmap=self.iconeTrasnferencia, pos=(novoxi + lbtransfer + plusx, novoyi), style=wx.NO_BORDER)
+        novoxi = novoxi + lbtransfer + plusx
+        self.Bind(wx.EVT_BUTTON, self.chama_frmTransferencia, self.botaoTransferencia)
+        self.botaoTransferencia.SetToolTip("Transferências bancárias")
 
         self.iconeRenda = wx.Bitmap(self.caminho + 'Rendimento-64.png')
         lbrenda, abrenda = self.iconeRenda.GetSize()
@@ -383,6 +391,17 @@ class frmDesempenhoAtivo(FrameMG):
             if len(ativo) > 1:
                 self.frmVariacao.temAtivoInicial(ativo)
             self.frmVariacao.Raise()  # Se já existir, apenas traz para frente
+
+    def chama_frmTransferencia(self, evento):
+        ativo = self.txtAtivo.GetValue()
+        if self.frmTransferencia is None:  # Se não existir, cria uma nova janela
+            self.frmTransferencia = FrmTransferencia()
+            self.frmTransferencia.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmTransferencia"))
+            self.frmTransferencia.Show()
+        else:
+            if len(ativo) > 1:
+                self.frmTransferencia.temAtivoInicial(ativo)
+            self.frmTransferencia.Raise()  # Se já existir, apenas traz para frente
 
     def chama_frmRendaFixa(self, evento):
         ativo = self.txtAtivo.GetValue()
