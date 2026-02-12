@@ -93,9 +93,12 @@ class Ativo():
         retorno = True
         try:
             simulado = False
+            nota = None
             if len(kwargs) > 0:
                 if 'simulado' in kwargs:
                     simulado = kwargs['simulado']
+                if 'nota' in kwargs:
+                    nota = kwargs['nota']
 
             self.conexao = self.getConexao()
             cursor = self.conexao.cursor()
@@ -106,11 +109,19 @@ class Ativo():
             idativo = resultado[0]
             valor = devolveDecimalDeFloat(valoroperacao, 2)
             # Inserir os dados na tabela 'operacao'
-            insert_query = """
-                INSERT INTO ativonegociado (idativo, operacao, valoroperacao, qtdeoperacao, dataoperacao, idconta, simulado)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(insert_query, (idativo, operacao, valor, qtdeoperacao, dataoperacao, idconta, simulado))
+            if nota:
+                insert_query = """
+                    INSERT INTO ativonegociado (idativo, operacao, valoroperacao, qtdeoperacao, dataoperacao, idconta, simulado, numeronota)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """
+                cursor.execute(insert_query, (idativo, operacao, valor, qtdeoperacao, dataoperacao, idconta, simulado, nota ))
+            else:
+                insert_query = """
+                    INSERT INTO ativonegociado (idativo, operacao, valoroperacao, qtdeoperacao, dataoperacao, idconta, simulado)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """
+                cursor.execute(insert_query, (idativo, operacao, valor, qtdeoperacao, dataoperacao, idconta, simulado))
+
 
         except Exception as e:
             retorno = False
@@ -124,10 +135,14 @@ class Ativo():
 
         retorno = True
         try:
+            nota = None
             if len(kwargs) > 0:
                 simulado = False
+                
                 if 'simulado' in kwargs:
                     simulado = kwargs['simulado']
+                if 'nota' in kwargs:
+                    nota = kwargs['nota']
 
             self.conexao = self.getConexao()
             cursor = self.conexao.cursor()
@@ -137,12 +152,20 @@ class Ativo():
 
             idativo = resultado[0]
 
+
             # Inserir os dados na tabela 'operacao'
-            insert_query = """
-                update ativonegociado set idativo = %s, operacao = %s, valoroperacao = %s, qtdeoperacao = %s,
-                dataoperacao = %s, idconta = %s, simulado = %s where id = %s;
-            """
-            cursor.execute(insert_query, (idativo, operacao, valoroperacao, qtdeoperacao, dataoperacao, idconta, simulado, id))
+            if nota:
+                insert_query = """
+                    update ativonegociado set idativo = %s, operacao = %s, valoroperacao = %s, qtdeoperacao = %s,
+                    dataoperacao = %s, idconta = %s, simulado = %s, numeronota = %s where id = %s;
+                """
+                cursor.execute(insert_query, (idativo, operacao, valoroperacao, qtdeoperacao, dataoperacao, idconta, simulado, nota, id))
+            else:
+                insert_query = """
+                    update ativonegociado set idativo = %s, operacao = %s, valoroperacao = %s, qtdeoperacao = %s,
+                    dataoperacao = %s, idconta = %s, simulado = %s where id = %s;
+                """
+                cursor.execute(insert_query, (idativo, operacao, valoroperacao, qtdeoperacao, dataoperacao, idconta, simulado, id))
 
         except Exception as e:
             retorno = False
@@ -589,7 +612,7 @@ class Ativo():
         cursor = conexao.cursor()
 
         clausulaSql = 'select an.id, an.idativo, a.sigla, a.razaosocial, an.valoroperacao, an.qtdeoperacao, ' \
-                      'an.dataoperacao, an.idconta, c.nomeconta, an.dataehorainsert, an.operacao, an.simulado from ativonegociado as an ' \
+                      'an.dataoperacao, an.idconta, c.nomeconta, an.dataehorainsert, an.operacao, an.simulado, an.numeronota from ativonegociado as an ' \
                       'join ativo as a on an.idativo = a.id join conta as c on an.idconta = c.id ' \
                       'where an.dataoperacao = \'' + data + '\' and an.idconta = ' + str(conta) + ' ' \
                       'order by a.sigla, an.dataehorainsert;'

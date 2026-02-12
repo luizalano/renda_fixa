@@ -380,7 +380,6 @@ class frmDesempenhoAtivo(FrameMG):
         else:
             self.frmNotaNegociacao.Raise()  # Se já existir, apenas traz para frente
 
-    
     def chama_frmvariacao(self, evento):
         ativo = self.txtAtivo.GetValue()
         if self.frmVariacao is None:  # Se não existir, cria uma nova janela

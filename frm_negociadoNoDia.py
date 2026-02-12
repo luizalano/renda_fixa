@@ -22,7 +22,7 @@ class FrmNegociadoNoDia(FrameMG):
     def __init__(self, **kwargs):
         self.ativo = Ativo()
 
-        super(FrmNegociadoNoDia, self).__init__(pai=None, titulo='Ativos Negociados na data - CONTA NÃO DEFINIDA', lar=1200,
+        super(FrmNegociadoNoDia, self).__init__(pai=None, titulo='Ativos Negociados na data - CONTA NÃO DEFINIDA', lar=1300,
                                                 alt=720, xibot=1000, split=False)
 
         self.criaComponentes()
@@ -46,7 +46,7 @@ class FrmNegociadoNoDia(FrameMG):
     def criaComponentes(self):
         X = self.posx(1)
         Y = self.posy(1) + 15
-        tamX = self.larguraEmPx(150)
+        tamX = self.larguraEmPx(160)
         tamY = self.alturaEmPx(13)
 
         self.setAvancoVertical(8)
@@ -83,24 +83,28 @@ class FrmNegociadoNoDia(FrameMG):
 
         label001, self.txtQuantidade = self.criaCaixaDeTexto(self.painel, pos=(x0 + 90, 0), label='Quantidade',
                                                              tamanho=(7, 1), max=8, multi=False)
+        
         label002, self.txtValor = self.criaCaixaDeTexto(self.painel, pos=(x0 + 101, 0), label='Valor',
                                                         tamanho=(12, 1), max=14, multi=False)
         
-        labelee0, self.cbSimulado = self.criaCombobox(self.painel, pos=(x0 + 118, 0), tamanho=10, label='Simulado')
+        label0021, self.txtNota = self.criaCaixaDeTexto(self.painel, pos=(x0 + 118, 0), label='Nota',
+                                                        tamanho=(12, 1), max=14, multi=False)
+        
+        labelee0, self.cbSimulado = self.criaCombobox(self.painel, pos=(x0 + 135, 0), tamanho=10, label='Simulado')
         self.cbSimulado.Append('1 - Simulado')
         self.cbSimulado.Append('2 - Efetivo')
 
-        self.listaComponentes = [self.cbOperacao, self.txtQuantidade, self.txtValor, self.salva_elemento]
+        self.listaComponentes = [self.cbOperacao, self.txtQuantidade, self.txtValor, self.txtNota, self.cbSimulado]
 
-        self.botaoNovo.SetPosition((950, 20))
-        self.botaoSalva.SetPosition((990, 20))
-        self.botaoDelete.SetPosition((1030, 20))
-        self.botaoCancela.SetPosition((1070, 20))
+        self.botaoNovo.SetPosition((1090, 20))
+        self.botaoSalva.SetPosition((1130, 20))
+        self.botaoDelete.SetPosition((1170, 20))
+        self.botaoCancela.SetPosition((1210, 20))
 
         self.txtNomeAtivo.Disable()
         self.limpa_elementos()
 
-        self.grid.CreateGrid(0, 10)
+        self.grid.CreateGrid(0, 11)
 
         self.Show()
 
@@ -130,11 +134,13 @@ class FrmNegociadoNoDia(FrameMG):
 
         self.txtAtivo.Clear()
         self.txtValor.Clear()
+        self.txtNota.Clear()
         self.txtQuantidade.Clear()
 
         self.txtAtivo.Disable()
         self.txtValor.Disable()
         self.txtValor.Disable()
+        self.txtNota.Disable()
         self.txtQuantidade.Disable()
 
         self.botaoSalva.Disable()
@@ -182,7 +188,8 @@ class FrmNegociadoNoDia(FrameMG):
             self.cbOperacao.SetSelection(self.lista[row][10] - 1)
             self.txtQuantidade.SetValue(str(self.lista[row][5]))
             self.txtValor.SetValue(str(self.lista[row][4]))
-            sim = self.lista[row][11]
+            self.txtNota.SetValue(str(self.lista[row][12]))
+            sim = self.lista[row][12]
             if sim == True: 
                 self.cbSimulado.SetSelection(0)
             else: 
@@ -214,6 +221,7 @@ class FrmNegociadoNoDia(FrameMG):
         self.grid.SetColSize(7, 120)
         self.grid.SetColSize(8, 120)
         self.grid.SetColSize(9, 70)
+        self.grid.SetColSize(10, 100)
 
         self.grid.SetColLabelValue(0, 'id')
         self.grid.SetColLabelValue(1, 'Sigla')
@@ -225,6 +233,7 @@ class FrmNegociadoNoDia(FrameMG):
         self.grid.SetColLabelValue(7, 'Total Operação')
         self.grid.SetColLabelValue(8, 'Última cotação')
         self.grid.SetColLabelValue(9, 'Simulado')
+        self.grid.SetColLabelValue(10, 'Nota')
 
         self.lista = lista
 
@@ -251,7 +260,7 @@ class FrmNegociadoNoDia(FrameMG):
 
             cotacao = Ativo.get_ultima_cotacao(row[2])
             if row[11] == True: simulado = 'SIMULADO'
-            else: simulado = ''
+            else: simulado = 'EFETIVO'
 
             linha = self.contador
             self.grid.AppendRows()
@@ -265,17 +274,18 @@ class FrmNegociadoNoDia(FrameMG):
             self.grid.SetCellValue(linha, 7, formata_numero(total_operacao))
             self.grid.SetCellValue(linha, 8, formata_numero(cotacao))
             self.grid.SetCellValue(linha, 9, simulado)
+            self.grid.SetCellValue(linha, 10, row[12])
             self.contador += 1
 
-            self.grid.SetCellAlignment(linha, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            self.grid.SetCellAlignment(linha, 2, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-            self.grid.SetCellAlignment(linha, 3, wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
-            self.grid.SetCellAlignment(linha, 4, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            self.grid.SetCellAlignment(linha, 5, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            self.grid.SetCellAlignment(linha, 6, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            self.grid.SetCellAlignment(linha, 7, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-            self.grid.SetCellAlignment(linha, 8, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-
+            self.grid.SetCellAlignment(linha,  1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            self.grid.SetCellAlignment(linha,  2, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+            self.grid.SetCellAlignment(linha,  3, wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
+            self.grid.SetCellAlignment(linha,  4, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            self.grid.SetCellAlignment(linha,  5, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            self.grid.SetCellAlignment(linha,  6, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            self.grid.SetCellAlignment(linha,  7, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            self.grid.SetCellAlignment(linha,  8, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
+            self.grid.SetCellAlignment(linha, 10, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
 
     def str_or_none(self, arg):
         if arg is None:
@@ -293,6 +303,7 @@ class FrmNegociadoNoDia(FrameMG):
 
         simulado = False
         avanca = self.ativo.existeAtivo(siglaAtivo)
+        nota = None
         if avanca:
             operacao = self.cbOperacao.GetSelection() + 1
             if operacao < 1 or operacao > 2:
@@ -308,6 +319,7 @@ class FrmNegociadoNoDia(FrameMG):
                 simulado = True
             else:
                 simulado = False 
+            nota = self.txtNota.Value
 
         if avanca:
             if self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.id_conta, simulado=simulado) == True:
@@ -319,6 +331,7 @@ class FrmNegociadoNoDia(FrameMG):
         self.limpa_elementos()
         self.txtAtivo.Enable()
         self.txtValor.Enable()
+        self.txtNota.Enable
         self.txtQuantidade.Enable()
         self.cbOperacao.Enable()
 
@@ -346,6 +359,7 @@ class FrmNegociadoNoDia(FrameMG):
         siglaAtivo = self.txtAtivo.Value
 
         simulado = False
+        nota = self.txtNota
         avanca = self.ativo.existeAtivo(siglaAtivo)
         if avanca:
             operacao = self.cbOperacao.GetSelection() + 1
@@ -366,10 +380,10 @@ class FrmNegociadoNoDia(FrameMG):
         if avanca:
 
             if self.insert is True:
-                self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.id_conta, simulado=simulado)
+                self.ativo.insereOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.id_conta, simulado=simulado, nota=nota)
                 self.insert = False
             else:
-                self.ativo.updateOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.id_conta, self.id, simulado=simulado)
+                self.ativo.updateOperacao(siglaAtivo, dataOperacao, operacao, valor, quantidade, self.id_conta, self.id, simulado=simulado, nota=nota)
             self.cancela_operacao(event)
             self.data_selecionada(event)
 

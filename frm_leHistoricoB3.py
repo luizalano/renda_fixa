@@ -129,8 +129,10 @@ class LeHistoricoB3(wx.Frame):
                     preco = self.parse_float(row['Preço de fechamento'])
                     minimo = self.parse_float(row['Preço mínimo'])
                     maximo = self.parse_float(row['Preço máximo'])
-                    qtd_negocios = self.parse_int(row['Quantidade de negócios'])
-                    qtd_acoes = self.parse_int(row['Quantidade de contratos'])
+                    qtd_negocios_str = row['Quantidade de negócios'].replace('.','')
+                    qtd_negocios = self.parse_int(qtd_negocios_str)
+                    qtd_acoes_str = row['Quantidade de contratos'].replace('.','')
+                    qtd_acoes = self.parse_int(qtd_acoes_str)
                     valor_negociado = self.parse_float(row['Volume financeiro'])
 
                     sql = '''
