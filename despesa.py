@@ -17,6 +17,7 @@ class Despesa():
     valor = 0.0
     id_conta = -1
     id_tipo_despesa = -1
+    nome_tipo_despesa = None
     notaNegociacao = NotaNegociacao() 
 
     def __init__(self):
@@ -43,9 +44,9 @@ class Despesa():
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
 
-        clausulaSql = 'select id, datalancamento, descricao, valor, idconta, idtipodespesa, numeronota, dataefetivacao ' \
-                      'from despesas ' \
-                      'order by datalancamento;'
+        clausulaSql = 'select d.id, d.datalancamento, d.descricao, d.valor, d.idconta, d.idtipodespesa, d.numeronota, d.dataefetivacao, td.nomedespesa ' \
+                      'from despesas as d join tipodespesa as td on d.idtipodespesa = td.id ' \
+                      'order by d.datalancamento;'
 
         try:
             cursor.execute(clausulaSql)
@@ -72,9 +73,10 @@ class Despesa():
         self.set_id_tipo_despesa(-1)
 
     def popula_despesas_by_id(self, arg):
-        clausulaSql = 'select id, datalancamento, descricao, valor, idconta, idtipodespesa, numeronota, dataefetivacao ' \
-                      'from despesas ' \
-                      'where id = ' + str(arg) + ' order by datalancamento;'
+        clausulaSql = 'select d.id, d.datalancamento, d.descricao, d.valor, d.idconta, d.idtipodespesa, d.numeronota, d.dataefetivacao, ' \
+                      'td.nomedespesa  ' \
+                      'from despesas as d join tipodespesa as td on d.idtipodespesa = td.id ' \
+                      'where d.id = ' + str(arg) + ' order by d.datalancamento;'
 
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
@@ -126,6 +128,8 @@ class Despesa():
         lista = TipoDespesa.mc_select_by_id(arg)
         if lista:
             self.id_tipo_despesa = lista[0]
+            self.nome_tipo_despesa = lista[1]
+
     def sql_busca_tamanho(self, coluna):
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()
