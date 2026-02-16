@@ -94,6 +94,14 @@ class TipoDespesa:
         con.close()
         return lista
 
+    @staticmethod
+    def mc_select_by_nome(arg):
+        con = TipoDespesa.getConexao()
+        cursor = con.cursor()
+        cursor.execute("SELECT id, nomedespesa FROM tipodespesa WHERE upper(nomedespesa) = upper(%s)", (arg,))
+        lista = cursor.fetchone()
+        con.close()
+        return lista
 
 
 def main():

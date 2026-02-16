@@ -16,6 +16,7 @@ class Despesa():
     numero_nota = ''
     valor = 0.0
     id_conta = -1
+    nome_conta = None
     id_tipo_despesa = -1
     nome_tipo_despesa = None
     notaNegociacao = NotaNegociacao() 
@@ -119,13 +120,29 @@ class Despesa():
     def set_valor(self, arg):
         self.valor = devolve_float_de_formatacao_completa(arg)
     def set_id_conta(self, arg):
-        self.id_conta = 1
+        self.id_conta = -1
+        self.nome_conta = None
         lista = Conta.mc_select_one_by_id(arg)
         if lista:
             self.id_conta = lista[0]
+            self.nome_conta = lista[4]
+    def set_nome_conta(self, arg):
+        self.id_conta = -1
+        self.nome_conta = None
+        lista = Conta.mc_select_one_by_nome(arg)
+        if lista:
+            self.id_conta = lista[0]
+            self.nome_conta = lista[4]
     def set_id_tipo_despesa(self, arg):
         self.id_tipo_despesa = -1
         lista = TipoDespesa.mc_select_by_id(arg)
+        if lista:
+            self.id_tipo_despesa = lista[0]
+            self.nome_tipo_despesa = lista[1]
+
+    def set_nome_tipo_despesa(self, arg):
+        self.id_tipo_despesa = -1
+        lista = TipoDespesa.mc_select_by_nome(arg)
         if lista:
             self.id_tipo_despesa = lista[0]
             self.nome_tipo_despesa = lista[1]
@@ -178,16 +195,6 @@ class Despesa():
                       'idtipodespesa = %s, ' \
                       'valor = %s ' \
                       'where id = %s'
-
-        #clausulaSql += "descricao = '" + tiraAspas(self.descricao) + "', "
-        #clausulaSql += "numeronota = '" + tiraAspas(self.numero_nota) + "', "
-        #clausulaSql += "id = " + str(self.id) + ", "
-        #clausulaSql += "datalancamento = '" + str(self.data_lancamento) + "', "
-        #clausulaSql += "dataefetivacao = '" + str(self.data_efetivacao) + "', "
-        #clausulaSql += "idconta = " + str(self.id_conta) + ", "
-        #clausulaSql += "idtipodespesa = " + str(self.id_tipo_despesa) + ", "
-        #clausulaSql += "valor = " + str(self.valor) + " "
-        #clausulaSql += "where id = " + str(self.id) + ";"
 
         self.conexao = self.getConexao()
         cursor = self.conexao.cursor()  

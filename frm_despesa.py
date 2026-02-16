@@ -1,10 +1,5 @@
 # frm_despesa.py
 
-'''
-Quase perfeito. Mas abaixo da grid, preciso do botão que eu tinha antes onde escolho se quero ver últimos 3 meses ou todas as despesas. Por padrão são os últimos 3 meses. Então o Caption do botão é "Mostra todos". Clicando no botão, refaz a grid com data inicial de 01/01/2023 (não tem nada antes disso) e muda o caption para "Mostra últimos 3 meses". Na tela à direita, dois problemas. Faltou a linha com o número da nota e o botão que tinha para chamar frm_notaNegociacao.py. Este campo ficava logo abaixo das datas. O segundo problema é que os tamanhos das caixas de texto devem ser compatíveis com a informação que recebe. Não podem ser todas do mesmo tamanho. Questão de estética.
-'''
-
-
 from wx import *
 import wx.adv
 from floatValidator import FloatValidator
@@ -13,13 +8,15 @@ import wx.grid
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from baseCrudFrame import BaseCrudFrame
+from baseCrudFrame import *
 from despesa import Despesa
 from conta import Conta
 from cotacao import Cotacao
 from frm_notaNegociacao import FrmNotaNegociacao
-from diversos import *
+from frm_resumoDespesas import FrmResumoDespesas
+from frm_resumoDespesasMes import FrmResumoDespesasMes
 
+from diversos import *
 
 class FrmDespesa(BaseCrudFrame):
 
@@ -41,7 +38,10 @@ class FrmDespesa(BaseCrudFrame):
         self.nomeConta = None
         self._build_form()
 
-        frmNotaNegociacao = None
+        self.frmNotaNegociacao = None
+        self.frmResumoDespesas = None
+        self.frmResumoDespesasMes = None
+
 
         self.dataInicial = datetime.now().date() - relativedelta(months=3)
 
@@ -57,7 +57,7 @@ class FrmDespesa(BaseCrudFrame):
                 self.setaElementocb(self.cbConta, self.nomeConta)
                 self.contaSelecionada(None)
 
-
+        self.cancela_operacao(None)
         self.Show()
 
     # =============================
@@ -92,20 +92,30 @@ class FrmDespesa(BaseCrudFrame):
     def _build_form(self):
 
         # Conta
-        self.cbConta = wx.ComboBox(self.panel_right, style=wx.CB_READONLY, size=(200, -1))
-        self.cbConta.Bind(wx.EVT_COMBOBOX, self.contaSelecionada)
-        self.add_field("Conta", self.cbConta)
+        #self.cbConta = wx.ComboBox(self.form_panel, style=wx.CB_READONLY, size=(200, -1))
+        #self.cbConta.Bind(wx.EVT_COMBOBOX, self.contaSelecionada)
+        #self.add_field("Conta", self.cbConta)
 
-        self.txtNomeMoeda = wx.TextCtrl(self.panel_right, style=wx.TE_READONLY | wx.TE_RIGHT, size=(120, -1))
-        self.txtValorMoeda = wx.TextCtrl(self.panel_right, style=wx.TE_READONLY | wx.TE_RIGHT, size=(120, -1))
+        self.header_box.Label = "Despesas da conta corrente"
+        self.cbConta = wx.ComboBox(self.header_box, style=wx.CB_READONLY)
+
+        container = wx.BoxSizer(wx.VERTICAL)
+        #label = wx.StaticText(self.header_box, label="Conta")
+        #container.Add(label, 0, wx.BOTTOM, 3)
+        container.Add(self.cbConta, 0, wx.EXPAND)
+
+        self.header_right_sizer.Add(container, 0, wx.EXPAND | wx.BOTTOM, 10)
+
+        self.txtNomeMoeda = wx.TextCtrl(self.form_panel, style=wx.TE_READONLY | wx.TE_RIGHT, size=(120, -1))
+        self.txtValorMoeda = wx.TextCtrl(self.form_panel, style=wx.TE_READONLY | wx.TE_RIGHT, size=(120, -1))
         nm = self.create_labeled_control("Moeda", self.txtNomeMoeda)
         vm = self.create_labeled_control("Valor moeda", self.txtValorMoeda)
         self.add_row([nm, vm])
 
         # Datas lado a lado
-        self.dpLancamento = wx.adv.DatePickerCtrl(self.panel_right, size=(120, -1), style=wx.adv.DP_DROPDOWN | wx.adv.DP_SHOWCENTURY)
-        self.dpEfetivacao = wx.adv.DatePickerCtrl(self.panel_right, size=(120, -1), style=wx.adv.DP_DROPDOWN | wx.adv.DP_SHOWCENTURY)
-        #self.dpEfetivacao = wx.adv.DatePickerCtrl(self.panel_right)
+        self.dpLancamento = wx.adv.DatePickerCtrl(self.form_panel, size=(120, -1), style=wx.adv.DP_DROPDOWN | wx.adv.DP_SHOWCENTURY)
+        self.dpEfetivacao = wx.adv.DatePickerCtrl(self.form_panel, size=(120, -1), style=wx.adv.DP_DROPDOWN | wx.adv.DP_SHOWCENTURY)
+        #self.dpEfetivacao = wx.adv.DatePickerCtrl(self.form_panel)
 
         dp1 = self.create_labeled_control("Data lançamento", self.dpLancamento)
         dp2 = self.create_labeled_control("Data efetivação", self.dpEfetivacao)
@@ -113,38 +123,60 @@ class FrmDespesa(BaseCrudFrame):
         self.add_row([dp1, dp2])
         #self.add_row([self.dpLancamento, self.dpEfetivacao])
 
-        self.numeroNota = wx.TextCtrl(self.panel_right, size=(120, -1))
-        nota_field = self.create_labeled_control("Número da nota", self.numeroNota)
+        self.txtNumeroNota = wx.TextCtrl(self.form_panel, size=(120, -1))
+        self.add_field("Número da nota", self.txtNumeroNota)
+        #nota_field = self.create_labeled_control("Número da nota", self.txtNumeroNota)
 
-        self.iconeNota = wx.Bitmap(self.caminho + 'invoice32.png')
-        lb, ab = self.iconeNota.GetSize()
-        self.botaoNota = wx.BitmapButton(self.panel_right, bitmap=self.iconeNota, size=(lb + 10, ab + 10))
-        self.Bind(wx.EVT_BUTTON, self.chamaNota, self.botaoNota)
-        self.botaoNota.SetToolTip("Confere as notas de negociação")
-        self.add_row([nota_field, self.botaoNota])
+        #self.iconeNota = wx.Bitmap(self.caminho + 'invoice32.png')
+        #lb, ab = self.iconeNota.GetSize()
+        #self.botaoNota = wx.BitmapButton(self.form_panel, bitmap=self.iconeNota, size=(lb + 10, ab + 10))
+        #self.Bind(wx.EVT_BUTTON, self.chamaNota, self.botaoNota)
+        #self.botaoNota.SetToolTip("Confere as notas de negociação")
+        #self.add_row([nota_field, self.botaoNota])
 
         # Tipo despesa
-        self.cbTipoDespesa = wx.ComboBox(self.panel_right, style=wx.CB_READONLY, size=(200, -1))
+        self.cbTipoDespesa = wx.ComboBox(self.form_panel, style=wx.CB_READONLY, size=(200, -1))
         self.cbTipoDespesa.Bind(wx.EVT_COMBOBOX, self.tipoDespesaSelecionada)
         self.add_field("Tipo de despesa", self.cbTipoDespesa)
 
         # Descrição
-        self.txtDescricao = wx.TextCtrl(self.panel_right, size=(300, -1))
+        self.txtDescricao = wx.TextCtrl(self.form_panel, size=(300, -1))
         self.add_field("Descrição", self.txtDescricao)
 
         # Valor
-        self.txtValor = wx.TextCtrl(self.panel_right, style=wx.TE_RIGHT, size=(120, -1), validator=FloatValidator())
+        self.txtValor = wx.TextCtrl(self.form_panel, style=wx.TE_RIGHT, size=(120, -1), validator=FloatValidator())
         self.add_field("Valor", self.txtValor)
 
         # Texto para números inteiros
-        #self.numeroNota = intctrl.IntCtrl(self.panel_right, size=(120, -1), allow_none=True)
+        #self.numeroNota = intctrl.IntCtrl(self.form_panel, size=(120, -1), allow_none=True)
 
         # Saldo bancário (readonly)
         self.txtSaldo = wx.TextCtrl(
-            self.panel_right,
+            self.form_panel,
             style=wx.TE_READONLY | wx.TE_RIGHT, size=(120, -1)
         )
         self.add_field("Saldo bancário", self.txtSaldo)
+
+        
+        self.btnMostraResumoPorTipo = Button(self.form_panel, id=ID_ANY, label="Consolidado por Tipo de Despesa", style=0)
+        self.Bind(wx.EVT_BUTTON, self.chamaResumo, self.btnMostraResumoPorTipo)
+        self.btnMostraResumoPorTipo.Enabled = False
+
+        self.btnMostraResumoPorMesTipo = Button(self.form_panel, id=ID_ANY, label="Consolidado por Tipo de Despesa e Mês", style=0)
+        self.Bind(wx.EVT_BUTTON, self.chamaResumoMes, self.btnMostraResumoPorMesTipo)
+        self.btnMostraResumoPorMesTipo.Enabled = False
+        
+        self.form_sizer.Add(self.btnMostraResumoPorTipo, 1, wx.EXPAND | wx.CENTER, 0)
+        self.form_sizer.Add(self.btnMostraResumoPorMesTipo, 1, wx.EXPAND | wx.CENTER, 0)
+
+        #
+        #  Acrescentando iten no tollbar
+        #
+
+        iconeNota = wx.Bitmap(self.caminho + 'invoice32.png')
+        self.ID_NOTAS = wx.NewIdRef()
+        self.add_toolbar_item(self.ID_NOTAS, iconeNota, "Notas de negociação", self.chamaNota, "Confere as notas de negociação", separator = True)
+
 
         self._load_combos()
 
@@ -156,10 +188,10 @@ class FrmDespesa(BaseCrudFrame):
 
         super()._bind_events()
 
-        self.Bind(wx.EVT_TOOL, self.on_new, id=wx.ID_NEW)
-        self.Bind(wx.EVT_TOOL, self.on_save, id=wx.ID_SAVE)
-        self.Bind(wx.EVT_TOOL, self.on_delete, id=wx.ID_DELETE)
-        self.Bind(wx.EVT_TOOL, self.on_cancel, id=wx.ID_CANCEL)
+        #self.Bind(wx.EVT_TOOL, self.habilita_novo, id=wx.ID_NEW)
+        #self.Bind(wx.EVT_TOOL, self.salva_elemento, id=wx.ID_SAVE)
+        #self.Bind(wx.EVT_TOOL, self.deleta_elemento, id=wx.ID_DELETE)
+        #self.Bind(wx.EVT_TOOL, self.cancela_operacao, id=wx.ID_CANCEL)
 
         self.grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.on_grid_click)
         self.cbConta.Bind(wx.EVT_COMBOBOX, self.contaSelecionada)
@@ -180,12 +212,18 @@ class FrmDespesa(BaseCrudFrame):
 
         # Botão alterna período
         self.btnTogglePeriodo = wx.Button(self.panel_left, label="Mostra todos")
-        self.left_sizer.Add(self.btnTogglePeriodo, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        self.left_sizer.Add(self.btnTogglePeriodo, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+
 
         self.panel_left.SetSizer(self.left_sizer)
+        
 
         # Evento
         self.btnTogglePeriodo.Bind(wx.EVT_BUTTON, self.on_toggle_periodo)
+
+
+
+
 
     def on_toggle_periodo(self, event):
         if self.btnTogglePeriodo.GetLabel() == "Mostra todos":
@@ -207,6 +245,13 @@ class FrmDespesa(BaseCrudFrame):
         for row in Despesa.mc_busca_tipos():
             self.cbTipoDespesa.Append(row[1])
 
+    def on_close(self, event, frame_attr):
+        """Garante que o objeto seja destruído ao fechar a janela."""
+        frame = getattr(self, frame_attr, None)  # Obtém a referência ao frame
+        if frame:
+            frame.Destroy()  # Destrói a janela
+            setattr(self, frame_attr, None)  # Define como None
+
     def chamaNota(self, event):
         if self.frmNotaNegociacao is None:  # Se não existir, cria uma nova janela
             self.frmNotaNegociacao = FrmNotaNegociacao()
@@ -214,6 +259,23 @@ class FrmDespesa(BaseCrudFrame):
             self.frmNotaNegociacao.Show()
         else:
             self.frmNotaNegociacao.Raise()  # Se já existir, apenas traz para frente
+
+    def chamaResumo(self, evento):
+        if self.frmResumoDespesas is None:  # Se não existir, cria uma nova janela
+            self.frmResumoDespesas = FrmResumoDespesas(id_conta=self.idConta)
+            self.frmResumoDespesas.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmResumoDespesas"))
+            self.frmResumoDespesas.Show()
+        else:
+            self.frmResumoDespesas.Raise()  # Se já existir, apenas traz para frente
+
+    def chamaResumoMes(self, evento):
+
+        if self.frmResumoDespesasMes is None:  # Se não existir, cria uma nova janela
+            self.frmResumoDespesasMes = FrmResumoDespesasMes(id_conta=self.idConta)
+            self.frmResumoDespesasMes.Bind(wx.EVT_CLOSE, lambda evt: self.on_close(evt, "frmResumoDespesasMes"))
+            self.frmResumoDespesasMes.Show()
+        else:
+            self.frmResumoDespesasMes.Raise()  # Se já existir, apenas traz para frente
 
     def montaGrid(self, dataInicial):
 
@@ -240,9 +302,9 @@ class FrmDespesa(BaseCrudFrame):
 
                 for col_idx, value in enumerate(row):
                     self.grid.SetCellValue(row_idx, col_idx, str(value))
-                    if col_idx in (0, 3):  # Coluna de id e valor
+                    if col_idx == 3:  # Coluna de valor
                         self.grid.SetCellAlignment(row_idx, col_idx, wx.ALIGN_RIGHT, wx.ALIGN_RIGHT)
-                    if col_idx == 2:  # Coluna de data
+                    if col_idx in (0, 1):  # Coluna de id e data
                         self.grid.SetCellAlignment(row_idx, col_idx, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
 
         self.grid.AutoSizeRows()
@@ -251,10 +313,12 @@ class FrmDespesa(BaseCrudFrame):
         nomeConta = self.cbConta.GetStringSelection()
         listaConta = None
         listaConta = Conta.mc_select_one_by_nome(nomeConta)
-        #self.btnMostraResumoPorTipo.Enabled = False
+        self.btnMostraResumoPorTipo.Enabled = False
+        self.btnMostraResumoPorMesTipo.Enabled = False
         self.idConta = -1
         if listaConta:
             self.idConta = listaConta[0]
+            self.nomeConta = listaConta[4]
             #self.btnMostraResumoPorTipo.Enabled = True
             if listaConta[8] == 'REAL':
                 self.txtNomeMoeda.SetValue(listaConta[8])
@@ -268,9 +332,12 @@ class FrmDespesa(BaseCrudFrame):
                     self.txtNomeMoeda.SetValue('')
                     self.txtValorMoeda.SetValue('')
             self.montaGrid(self.dataInicial)
+            self.btnMostraResumoPorTipo.Enabled = True
+            self.btnMostraResumoPorMesTipo.Enabled = True
         else:
             self.txtNomeMoeda.SetValue('')
             self.txtValorMoeda.SetValue('')
+
 
     def tipoDespesaSelecionada(self, event):
         nomeTipoDespesa = self.cbTipoDespesa.GetStringSelection()
@@ -293,41 +360,57 @@ class FrmDespesa(BaseCrudFrame):
             self.txtValor.SetValue(str(self.despesas.valor))
             self.setaDataPicker(self.dpLancamento, self.despesas.data_lancamento)
             self.setaDataPicker(self.dpEfetivacao, self.despesas.data_efetivacao)
-            self.numeroNota.SetValue(self.despesas.numero_nota)
+            self.txtNumeroNota.SetValue(self.despesas.numero_nota)
+
+            #self.insert = False
+            self._set_state(CrudState.VIEWING)
+
+            self.dpEfetivacao.Enable()
+            self.dpLancamento.Enable()
+            self.txtNumeroNota.Enable()
+            self.cbTipoDespesa.Enable()
+            self.txtDescricao.Enable()
+            self.txtValor.Enable()
+
+            self.toolbar.EnableTool(wx.ID_DELETE, True)
+            self.toolbar.EnableTool(wx.ID_SAVE, True) 
 
     def habilita_novo(self, event):
-        super().habilia_novo(event)
+        super().habilita_novo(event)
 
-        self.insert = True
+        #self.insert = True
         self.txtDescricao.Clear()
         self.txtValor.Clear()
 
-        self.dpEfetivacao.Disable()
-        self.dpLancamento.Disable()
-        self.txtNumeroNota.Disable()
-        self.cbTipoDespesa.Disable()
-        self.txtDescricao.Disable()
-        self.txtValor.Disable()
+        #self.dpEfetivacao.Enable()
+        #self.dpLancamento.Enable()
+        #self.txtNumeroNota.Enable()
+        #self.cbTipoDespesa.Enable()
+        #self.txtDescricao.Enable()
+        #self.txtValor.Enable()
+
+        self.toolbar.EnableTool(wx.ID_SAVE, True)  
 
     def salva_elemento(self, event):
 
         self.despesas.set_descricao(self.txtDescricao.GetValue())
         self.despesas.set_valor(devolve_float(self.txtValor.GetValue()))
-        self.despesas.set_id_conta(self.idConta)
-        self.despesas.set_id_tipo_despesa(self.id_tipo_despesa)
-        self.despesas.set_data_lancamento(self.getDataPicker(self.dpLancamento))
-        self.despesas.set_data_efetivacao(self.getDataPicker(self.dpEfetivacao))
-        self.despesas.set_numero_nota(self.numeroNota.GetValue())
+        self.despesas.set_nome_conta(self.cbConta.GetStringSelection())
+        self.despesas.set_nome_tipo_despesa(self.cbTipoDespesa.GetStringSelection())
+        self.despesas.set_data_lancamento(self.dpLancamento.GetValue().Format('%d/%m/%Y'))
+        self.despesas.set_data_efetivacao(self.dpEfetivacao.GetValue().Format('%d/%m/%Y'))
+        self.despesas.set_numero_nota(self.txtNumeroNota.GetValue())
 
         if self.insert:
             self.despesas.insere()
         else:
             self.despesas.update()
 
+        self.cancela_operacao(None)
         self.montaGrid(self.dataInicial)
 
     def deleta_elemento(self, event):
-        super().delete_elemento(event)
+        super().deleta_elemento(event)
 
         if self.prossegueEliminacao:
             self.despesas.delete()
@@ -340,12 +423,12 @@ class FrmDespesa(BaseCrudFrame):
         self.txtDescricao.Clear()
         self.txtValor.Clear()
 
-        self.dpEfetivacao.Disable()
-        self.dpLancamento.Disable()
-        self.txtNumeroNota.Disable()
-        self.cbTipoDespesa.Disable()
-        self.txtDescricao.Disable()
-        self.txtValor.Disable()
+        #self.dpEfetivacao.Disable()
+        #self.dpLancamento.Disable()
+        #self.txtNumeroNota.Disable()
+        #self.cbTipoDespesa.Disable()
+        #self.txtDescricao.Disable()
+        #self.txtValor.Disable()
 
 
 
